@@ -25,31 +25,15 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import Image from "next/image"
 
 // This is sample data.
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "John Doe",
+    email: "john.doe@hotmail.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Playground",
@@ -160,7 +144,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <div className="flex items-center">
+          <Image src="/icon-logo.png" alt="Logo" width={70} height={70} />
+          <h3 className="font-bold">Open Projects</h3>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

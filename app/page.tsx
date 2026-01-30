@@ -1,9 +1,17 @@
+import HeroBanner from "@/components/hero-banner";
+import { ProjectsTable } from "@/components/projects-table";
+import { SectionCards } from "@/components/ui/section-cards";
+
 export default async function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="mb-8 text-3xl font-bold">
-        Welcome to Project Management App
-      </h1>
-    </main>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-6">
+          <HeroBanner />
+          <SectionCards />
+          <ProjectsTable />
+        </div>
+      </div>
+    </div>
   );
 }
