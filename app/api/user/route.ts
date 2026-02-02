@@ -2,7 +2,7 @@ import { User } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-type CreateUserDTO = Pick<User, "firstName" | "lastName" | "email" | "role">;
+type CreateUserDTO = Omit<User, "createdAt" | "updatedAt" | "id">;
 
 export async function POST(request: NextRequest) {
   try {

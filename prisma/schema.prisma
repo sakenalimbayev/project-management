@@ -20,24 +20,78 @@ enum Role {
   ADMIN
 }
 
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  FINISHED
+}
+
 model User {
   id        String   @id @default(uuid())
   firstName String
   lastName  String
   email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   role      Role     @default(USER)
 
-  Project Project[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedProjects   Project[]        @relation("ProjectOwner")
+  projectMembers  ProjectMember[]
 }
 
 model Project {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
+  budget      Decimal       @db.Decimal(15, 2)
+  status      ProjectStatus @default(PLANNED)
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  ministryId String
+  ministry   Ministry @relation(fields: [ministryId], references: [id])
+  
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+
+  members ProjectMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([ministryId])
+  @@index([locationId])
 }
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  joinedAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Ministry {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  projects Project[]
+}
+ 
+model Location {
+  id      String   @id @default(uuid())
+  city    String
+  region  String?
+
+  projects Project[]
+
+  @@unique([city, region])
+}
+

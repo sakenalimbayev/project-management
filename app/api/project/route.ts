@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
-type CreateProjectDTO = Pick<Project, "name" | "description" | "ownerId">;
+type CreateProjectDTO = Omit<Project, "createdAt" | "updatedAt" | "id">;
 
 export async function POST(request: NextRequest) {
   try {
