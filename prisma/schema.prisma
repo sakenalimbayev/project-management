@@ -87,7 +87,7 @@ model Ministry {
  
 model Location {
   id      String   @id @default(uuid())
-  city    String
+  city    String?
   region  String?
 
   projects Project[]

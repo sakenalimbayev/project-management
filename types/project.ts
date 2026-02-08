@@ -1,13 +1,34 @@
-export interface ProjectData {
-    id: string;
+import { Project, Role } from "@/app/generated/prisma";
+
+export type ProjectWithRelations = Omit<Project, 'budget'> & {
+  ministry: {
     name: string;
-    company: string;
-    icon: string;
-    iconColor: string;
-    members: ProjectMember[];
-    budget: string;
-    completion: number;
-    status: 'working' | 'done' | 'cancelled';
+    id: string;
+  };
+  location: {
+    id: string;
+    region: string | null;
+    city: string | null;
+  };
+  members: [{
+    id: string;
+    projectId: string;
+    userId: string;
+    joinedAt: Date;
+    user: {
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: Role;
+      projectId: string;
+      userId: string;
+      joinedAt: Date;
+    }
+  }];
+  budget: string;
 }
 
 export interface ProjectMember {
