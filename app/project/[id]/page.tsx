@@ -3,6 +3,7 @@ import { defaultItems, ProjectTimeline } from "@/components/project-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
 
 export default async function ProjectPage({
@@ -54,7 +55,7 @@ export default async function ProjectPage({
                             <CardDescription>Discuss project details with the team</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            ${project.budget}
+                            <ProjectQuestions projectId={project.id} questions={project.questions ?? []} />
                         </CardContent>
                     </Card>
                 </div>

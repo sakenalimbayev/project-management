@@ -17,7 +17,8 @@ export async function GET(
           }
         },
         ministry: true,
-        location: true
+        location: true,
+        questions: true
       }
     });
 

@@ -10,7 +10,7 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
     region: string | null;
     city: string | null;
   };
-  members: [{
+  members: {
     id: string;
     projectId: string;
     userId: string;
@@ -27,8 +27,16 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
       projectId: string;
       userId: string;
       joinedAt: Date;
-    }
-  }];
+    };
+  }[];
+  questions: {
+    id: string;
+    projectId: string;
+    text: string;
+    answer: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
   budget: string;
 }
 
