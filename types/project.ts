@@ -23,6 +23,7 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
       lastName: string;
       email: string;
       role: Role;
+      avatar: string | null;
       projectId: string;
       userId: string;
       joinedAt: Date;

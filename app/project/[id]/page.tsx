@@ -2,6 +2,7 @@ import { ProjectDescriptionDialog } from "@/components/dialog/project-descriptio
 import { defaultItems, ProjectTimeline } from "@/components/project-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getProjectById } from "@/services/api/projects/projects";
 
 export default async function ProjectPage({
@@ -74,7 +75,35 @@ export default async function ProjectPage({
                             <CardTitle>Team Members</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            ${project.budget}
+                            <div className="space-y-4">
+                                {project.members?.map((member) => {
+                                    const fullName = `${member.user.firstName} ${member.user.lastName}`;
+                                    const placeholderAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`;
+
+                                    return (
+                                        <div key={member.id} className="flex items-center gap-3">
+                                            <Avatar>
+                                                <AvatarImage
+                                                    src={member.user.avatar ?? placeholderAvatar}
+                                                    alt={fullName}
+                                                />
+                                                <AvatarFallback>
+                                                    {member.user.firstName.charAt(0)}
+                                                    {member.user.lastName.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">
+                                                    {member.user.firstName} {member.user.lastName}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    {member.user.role}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
