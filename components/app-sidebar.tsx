@@ -26,6 +26,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 // This is sample data.
 const data = {
@@ -36,14 +37,14 @@ const data = {
   },
   navMain: [
     {
-      title: "Playground",
+      title: "Projects",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Overview",
+          url: "/projects",
         },
         {
           title: "Starred",
@@ -141,10 +142,11 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex items-center">
+        <div className="flex items-center cursor-pointer" onClick={() => router.push('/')}>
           <Image src="/icon-logo.png" alt="Logo" width={70} height={70} />
           <h3 className="font-bold">Open Projects</h3>
         </div>

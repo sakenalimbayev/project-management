@@ -10,9 +10,32 @@ export async function GET(
     const { id } = await ctx.params;
     const project = await prisma.project.findUnique({
       where: { id },
+      include: {
+        members: {
+          include: {
+            user: true
+          }
+        },
+        ministry: true,
+        location: true
+      }
     });
 
-    return NextResponse.json({ project });
+    if (!project) {
+      return NextResponse.json({
+        error: 'Project not found',
+        message: `Project with ID ${id} was not found`
+      }, {
+        status: 404
+      })
+    }
+
+    const serializedProject = {
+      ...project,
+      budget: project.budget.toString(),
+    };
+
+    return NextResponse.json({ data: serializedProject });
   } catch (error) {
     if (isPrismaError(error)) {
       return NextResponse.json(

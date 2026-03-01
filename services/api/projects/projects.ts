@@ -7,3 +7,8 @@ export const getAllProjects = async () => {
     const response = await fetcher<ApiResponse<ProjectWithRelations[]>>(`${getBaseUrl()}/api/project`);
     return response.data;
 }
+
+export const getProjectById = async (id: string) => {
+    const response = await fetcher<ApiResponse<ProjectWithRelations>>(`${getBaseUrl()}/api/project/${id}`);
+    return response.data;
+}
