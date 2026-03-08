@@ -93,7 +93,10 @@ export default async function ProjectPage({
                         <CardContent>
                             <div className="space-y-4">
                                 {project.members?.map((member) => {
-                                    const fullName = `${member.user.firstName} ${member.user.lastName}`;
+                                    const fullName =
+                                        member.user.name ??
+                                        [member.user.firstName, member.user.lastName].filter(Boolean).join(" ") ??
+                                        member.user.email;
                                     const placeholderAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`;
 
                                     return (
@@ -104,13 +107,13 @@ export default async function ProjectPage({
                                                     alt={fullName}
                                                 />
                                                 <AvatarFallback>
-                                                    {member.user.firstName.charAt(0)}
-                                                    {member.user.lastName.charAt(0)}
+                                                    {(member.user.firstName?.charAt(0) ?? member.user.email.charAt(0))}
+                                                    {(member.user.lastName?.charAt(0) ?? "")}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col">
                                                 <span className="font-medium">
-                                                    {member.user.firstName} {member.user.lastName}
+                                                    {fullName}
                                                 </span>
                                                 <span className="text-sm text-muted-foreground">
                                                     {member.user.role}

@@ -19,11 +19,13 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
       id: string;
       createdAt: Date;
       updatedAt: Date;
-      firstName: string;
-      lastName: string;
+      firstName: string | null;
+      lastName: string | null;
+      name?: string | null;
       email: string;
       role: Role;
       avatar: string | null;
+      image?: string | null;
       projectId: string;
       userId: string;
       joinedAt: Date;

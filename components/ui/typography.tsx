@@ -23,7 +23,12 @@ export function Typography({ variant = 'p', children, className }: TypographyPro
     }
 
     // Determine the HTML tag based on the variant
-    const Component = (variant.startsWith('h') ? variant : variant === 'blockquote' ? 'blockquote' : variant === 'code' ? 'code' : 'p') as any
+    const Component: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote' | 'code' = (() => {
+        if (variant === 'blockquote') return 'blockquote'
+        if (variant === 'code') return 'code'
+        if (variant === 'h1' || variant === 'h2' || variant === 'h3' || variant === 'h4') return variant
+        return 'p'
+    })()
 
     return (
         <Component className={cn(variants[variant], className)}>

@@ -15,6 +15,13 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { FC } from "react";
 
+const getMemberInitials = (member: ProjectWithRelations["members"][number]) => {
+    const first = member.user.firstName?.charAt(0);
+    const last = member.user.lastName?.charAt(0);
+    const fromEmail = member.user.email?.charAt(0);
+    return [first, last].filter(Boolean).join("") || fromEmail || "?";
+};
+
 const getProjectIcon = (iconName: string) => {
     const iconProps = { className: "w-4 h-4" };
 
@@ -60,7 +67,7 @@ const TableRow: FC<TableRowProps> = ({ project }) => {
                         <Avatar key={member.id} className="w-8 h-8 border-2 border-white">
                             {/* <AvatarImage src={member.avatar} alt={member.name} /> */}
                             <AvatarFallback className={cn("text-white text-xs black")}>
-                                {member.user.firstName.charAt(0)}
+                                {getMemberInitials(member)}
                             </AvatarFallback>
                         </Avatar>
                     ))}
