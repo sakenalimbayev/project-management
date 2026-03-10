@@ -33,7 +33,7 @@ const data = {
   user: {
     name: "John Doe",
     email: "john.doe@hotmail.com",
-    avatar: "/avatars/shadcn.jpg",
+    avatar: "https://ui-avatars.com/api/?name=John+Doe&background=random",
   },
   navMain: [
     {

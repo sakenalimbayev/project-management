@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { FieldGroup, Field, FieldLabel, FieldDescription } from "../ui/field";
 import { signIn } from "next-auth/react";
 
 export const LoginDialog = () => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +39,9 @@ export const LoginDialog = () => {
 
       if (result?.error) {
         setError("Invalid email or password.");
+      } else {
+        // Refresh server components (e.g. Header) to pick up new session
+        router.refresh();
       }
     } finally {
       setIsSubmitting(false);
@@ -101,7 +106,10 @@ export const LoginDialog = () => {
                 </Button>
               </div>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="#">Sign up</a>
+                Don&apos;t have an account?{" "}
+                <a href="/signup" className="underline underline-offset-4">
+                  Sign up
+                </a>
               </FieldDescription>
             </Field>
           </FieldGroup>

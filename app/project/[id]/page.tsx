@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
 import { MapPin } from "lucide-react";
+import { auth } from "@/auth";
+import { Button } from "@/components/ui/button";
 
 export default async function ProjectPage({
     params,
@@ -13,12 +15,28 @@ export default async function ProjectPage({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params;
+    const session = await auth();
     const project = await getProjectById(id);
     console.log(project);
 
     if (!project) {
         return null;
     }
+
+    const currentUserId = (session?.user as any)?.id as string | undefined;
+    const currentUserRole = (session?.user as any)?.role as string | undefined;
+
+    console.log("currentUserId", currentUserId);
+    console.log("currentUserRole", currentUserRole);
+
+    const isAdmin = currentUserRole === "ADMIN";
+    const isProjectAdmin = project.members?.some(
+        (member) =>
+            member.userId === currentUserId &&
+            member.role === "PROJECT_ADMINISTRATOR"
+    );
+
+    const canEditProject = Boolean(currentUserId && (isAdmin || isProjectAdmin));
 
 
     return (
@@ -32,7 +50,14 @@ export default async function ProjectPage({
                     {/* Description section */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Description</CardTitle>
+                            <div className="flex items-center justify-between gap-2">
+                                <CardTitle>Description</CardTitle>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {project.description}
@@ -42,8 +67,19 @@ export default async function ProjectPage({
                     {/* Timeline */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Project Timeline</CardTitle>
-                            <CardDescription>Estimated completion by Oct 24, 2025</CardDescription>
+                            <div className="flex items-center justify-between gap-2">
+                                <div>
+                                    <CardTitle>Project Timeline</CardTitle>
+                                    <CardDescription>
+                                        Estimated completion by Oct 24, 2025
+                                    </CardDescription>
+                                </div>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ProjectTimeline items={defaultItems} animate />
@@ -52,8 +88,19 @@ export default async function ProjectPage({
                     {/* Q&A */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Questions and Answers</CardTitle>
-                            <CardDescription>Discuss project details with the team</CardDescription>
+                            <div className="flex items-center justify-between gap-2">
+                                <div>
+                                    <CardTitle>Questions and Answers</CardTitle>
+                                    <CardDescription>
+                                        Discuss project details with the team
+                                    </CardDescription>
+                                </div>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ProjectQuestions projectId={project.id} questions={project.questions ?? []} />
@@ -65,7 +112,14 @@ export default async function ProjectPage({
                     {/* Budget */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Budget</CardTitle>
+                            <div className="flex items-center justify-between gap-2">
+                                <CardTitle>Budget</CardTitle>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             ${project.budget}
@@ -74,7 +128,14 @@ export default async function ProjectPage({
                     {/* Location */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Location</CardTitle>
+                            <div className="flex items-center justify-between gap-2">
+                                <CardTitle>Location</CardTitle>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center gap-2 text-sm text-gray-900">
@@ -88,7 +149,14 @@ export default async function ProjectPage({
                     {/* Team Members */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <CardTitle>Team Members</CardTitle>
+                            <div className="flex items-center justify-between gap-2">
+                                <CardTitle>Team Members</CardTitle>
+                                {canEditProject && (
+                                    <Button variant="outline" size="sm">
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">

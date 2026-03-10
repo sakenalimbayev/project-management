@@ -16,8 +16,12 @@ datasource db {
 
 enum Role {
   USER
-  PROJECT_ADMINISTRATOR
   ADMIN
+}
+
+enum ProjectMemberRole {
+  PROJECT_MEMBER
+  PROJECT_ADMINISTRATOR
 }
 
 enum ProjectStatus {
@@ -117,6 +121,8 @@ model ProjectMember {
   id        String   @id @default(uuid())
   projectId String
   userId    String
+
+  role      ProjectMemberRole @default(PROJECT_MEMBER)
 
   project Project @relation(fields: [projectId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
