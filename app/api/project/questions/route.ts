@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,6 +10,15 @@ type CreateQuestionDTO = {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    const userId = (session?.user as { id?: string })?.id;
+    if (!userId) {
+      return NextResponse.json(
+        { error: "You must be signed in to ask a question." },
+        { status: 401 }
+      );
+    }
+
     const body: CreateQuestionDTO = await request.json();
 
     if (!body.projectId || !body.text?.trim()) {
@@ -33,6 +43,8 @@ export async function POST(request: NextRequest) {
       data: {
         projectId: body.projectId,
         text: body.text.trim(),
+        authorId: userId,
+        status: "PENDING",
       },
     });
 

@@ -30,6 +30,12 @@ enum ProjectStatus {
   FINISHED
 }
 
+enum QuestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(uuid())
   firstName String?
@@ -45,10 +51,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownedProjects   Project[]        @relation("ProjectOwner")
-  projectMembers  ProjectMember[]
-  accounts        Account[]
-  sessions        Session[]
+  ownedProjects      Project[]        @relation("ProjectOwner")
+  projectMembers     ProjectMember[]
+  accounts           Account[]
+  sessions           Session[]
+  authoredQuestions  Question[]       @relation("QuestionAuthor")
+  moderatedQuestions Question[]       @relation("QuestionModerator")
 }
 
 model Account {
@@ -149,16 +157,24 @@ model Location {
 }
 
 model Question {
-  id        String   @id @default(uuid())
-  projectId String
-  text      String
-  answer    String?
+  id           String         @id @default(uuid())
+  projectId    String
+  authorId     String?
+  text         String
+  answer       String?
+  status       QuestionStatus @default(APPROVED)
+  approvedAt   DateTime?
+  approvedById String?
 
-  project   Project @relation(fields: [projectId], references: [id])
+  project    Project @relation(fields: [projectId], references: [id])
+  author     User?   @relation("QuestionAuthor", fields: [authorId], references: [id])
+  approvedBy User?   @relation("QuestionModerator", fields: [approvedById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+  @@index([authorId])
+  @@index([status])
 }
 

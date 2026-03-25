@@ -18,7 +18,10 @@ export async function GET(
         },
         ministry: true,
         location: true,
-        questions: true
+        questions: {
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "desc" },
+        },
       }
     });
 

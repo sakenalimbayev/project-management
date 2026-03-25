@@ -1,7 +1,8 @@
-import { Project } from "@/app/generated/prisma";
+import { Project, ProjectStatus } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 type CreateProjectDTO = Omit<Project, "createdAt" | "updatedAt" | "id">;
 
@@ -45,9 +46,32 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+
+    if (!session?.user || (session.user as any).role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Not authorized" },
+        { status: 403 }
+      );
+    }
+
     const body: CreateProjectDTO = await request.json();
+
+    // Ensure ownerId comes from the authenticated admin user
+    const ownerId = (session.user as any).id as string | undefined;
+    if (!ownerId) {
+      return NextResponse.json(
+        { error: "Owner information missing" },
+        { status: 400 }
+      );
+    }
+
     const project = await prisma.project.create({
-      data: body,
+      data: {
+        ...body,
+        ownerId,
+        status: (body as any).status ?? ProjectStatus.PLANNED,
+      },
     });
 
     return NextResponse.json({ project });

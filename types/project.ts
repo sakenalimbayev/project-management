@@ -1,4 +1,4 @@
-import { Project, Role, ProjectMemberRole } from "@/app/generated/prisma";
+import { Project, Role, ProjectMemberRole, QuestionStatus } from "@/app/generated/prisma";
 
 export type ProjectWithRelations = Omit<Project, 'budget'> & {
   ministry: {
@@ -35,8 +35,12 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
   questions: {
     id: string;
     projectId: string;
+    authorId: string | null;
     text: string;
     answer: string | null;
+    status: QuestionStatus;
+    approvedAt: Date | null;
+    approvedById: string | null;
     createdAt: Date;
     updatedAt: Date;
   }[];

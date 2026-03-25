@@ -17,7 +17,6 @@ export default async function ProjectPage({
     const { id } = await params;
     const session = await auth();
     const project = await getProjectById(id);
-    console.log(project);
 
     if (!project) {
         return null;
@@ -25,9 +24,6 @@ export default async function ProjectPage({
 
     const currentUserId = (session?.user as any)?.id as string | undefined;
     const currentUserRole = (session?.user as any)?.role as string | undefined;
-
-    console.log("currentUserId", currentUserId);
-    console.log("currentUserRole", currentUserRole);
 
     const isAdmin = currentUserRole === "ADMIN";
     const isProjectAdmin = project.members?.some(
@@ -103,7 +99,11 @@ export default async function ProjectPage({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <ProjectQuestions projectId={project.id} questions={project.questions ?? []} />
+                            <ProjectQuestions
+                                projectId={project.id}
+                                questions={project.questions ?? []}
+                                isAuthenticated={Boolean(currentUserId)}
+                            />
                         </CardContent>
                     </Card>
                 </div>
