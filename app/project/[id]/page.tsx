@@ -1,5 +1,6 @@
 import { ProjectDescriptionDialog } from "@/components/dialog/project-description-dialog";
-import { defaultItems, ProjectTimeline } from "@/components/project-timeline";
+import { ProjectGanttSection } from "@/components/project-gantt-section";
+import type { SerializedProjectStage } from "@/lib/map-project-stages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +35,21 @@ export default async function ProjectPage({
 
     const canEditProject = Boolean(currentUserId && (isAdmin || isProjectAdmin));
 
+    const serializedStages: SerializedProjectStage[] = (project.stages ?? []).map(
+        (s) => ({
+            id: s.id,
+            projectId: project.id,
+            label: s.label,
+            startDate: new Date(s.startDate as unknown as string)
+                .toISOString()
+                .slice(0, 10),
+            endDate: new Date(s.endDate as unknown as string)
+                .toISOString()
+                .slice(0, 10),
+            status: s.status,
+            sortOrder: s.sortOrder,
+        })
+    );
 
     return (
         <>
@@ -63,22 +79,19 @@ export default async function ProjectPage({
                     {/* Timeline */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <div>
-                                    <CardTitle>Project Timeline</CardTitle>
-                                    <CardDescription>
-                                        Estimated completion by Oct 24, 2025
-                                    </CardDescription>
-                                </div>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        Edit
-                                    </Button>
-                                )}
+                            <div>
+                                <CardTitle>Project Timeline</CardTitle>
+                                <CardDescription>
+                                    Schedule by stage (Gantt). Stages are managed by project administrators.
+                                </CardDescription>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <ProjectTimeline items={defaultItems} animate />
+                            <ProjectGanttSection
+                                projectId={project.id}
+                                stages={serializedStages}
+                                canEdit={canEditProject}
+                            />
                         </CardContent>
                     </Card>
                     {/* Q&A */}

@@ -30,6 +30,12 @@ enum ProjectStatus {
   FINISHED
 }
 
+enum StageStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
 enum QuestionStatus {
   PENDING
   APPROVED
@@ -116,6 +122,7 @@ model Project {
 
   members ProjectMember[]
   questions Question[]
+  stages    ProjectStage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,6 +130,23 @@ model Project {
   @@index([status])
   @@index([ministryId])
   @@index([locationId])
+}
+
+model ProjectStage {
+  id        String      @id @default(uuid())
+  projectId String
+  label     String
+  startDate DateTime    @db.Date
+  endDate   DateTime    @db.Date
+  status    StageStatus @default(PLANNED)
+  sortOrder Int         @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 model ProjectMember {

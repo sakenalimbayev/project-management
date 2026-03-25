@@ -18,6 +18,9 @@ export async function GET(
         },
         ministry: true,
         location: true,
+        stages: {
+          orderBy: { sortOrder: "asc" },
+        },
         questions: {
           where: { status: "APPROVED" },
           orderBy: { createdAt: "desc" },

@@ -1,5 +1,7 @@
 import { Project, Role, ProjectMemberRole, QuestionStatus } from "@/app/generated/prisma";
 
+export type ProjectStageStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED";
+
 export type ProjectWithRelations = Omit<Project, 'budget'> & {
   ministry: {
     name: string;
@@ -41,6 +43,17 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
     status: QuestionStatus;
     approvedAt: Date | null;
     approvedById: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+  stages?: {
+    id: string;
+    projectId: string;
+    label: string;
+    startDate: string;
+    endDate: string;
+    status: ProjectStageStatus;
+    sortOrder: number;
     createdAt: Date;
     updatedAt: Date;
   }[];
