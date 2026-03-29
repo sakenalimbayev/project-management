@@ -25,7 +25,8 @@ import {
 type ProjectFormState = {
   name: string;
   description: string;
-  budget: string;
+  totalBudget: string;
+  spentAmount: string;
   ownerId: string;
   ministryId: string;
   locationId: string;
@@ -39,7 +40,8 @@ export default function AdminPage() {
   const [form, setForm] = useState<ProjectFormState>({
     name: "",
     description: "",
-    budget: "",
+    totalBudget: "",
+    spentAmount: "",
     ownerId: "",
     ministryId: "",
     locationId: "",
@@ -118,14 +120,21 @@ export default function AdminPage() {
     event.preventDefault();
     setError(null);
 
-    if (!form.name || !form.budget || !form.ownerId || !form.ministryId || !form.locationId) {
+    if (!form.name || !form.totalBudget || !form.ownerId || !form.ministryId || !form.locationId) {
       setError("Please fill in all required fields.");
       return;
     }
 
-    const numericBudget = Number(form.budget);
-    if (Number.isNaN(numericBudget) || numericBudget <= 0) {
-      setError("Budget must be a positive number.");
+    const numericTotal = Number(form.totalBudget);
+    if (Number.isNaN(numericTotal) || numericTotal <= 0) {
+      setError("Total budget must be a positive number.");
+      return;
+    }
+
+    const spentRaw = form.spentAmount.trim();
+    const numericSpent = spentRaw === "" ? 0 : Number(spentRaw);
+    if (Number.isNaN(numericSpent) || numericSpent < 0) {
+      setError("Amount spent must be zero or a positive number.");
       return;
     }
 
@@ -137,7 +146,8 @@ export default function AdminPage() {
         body: JSON.stringify({
           name: form.name,
           description: form.description || null,
-          budget: numericBudget.toString(),
+          totalBudget: numericTotal.toString(),
+          spentAmount: numericSpent.toString(),
           ownerId: form.ownerId,
           ministryId: form.ministryId,
           locationId: form.locationId,
@@ -241,18 +251,33 @@ export default function AdminPage() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="budget">Budget</FieldLabel>
+              <FieldLabel htmlFor="totalBudget">Total budget</FieldLabel>
               <Input
-                id="budget"
-                value={form.budget}
-                onChange={handleChange("budget")}
+                id="totalBudget"
+                value={form.totalBudget}
+                onChange={handleChange("totalBudget")}
                 type="number"
                 min="0"
                 step="0.01"
                 required
               />
               <FieldDescription>
-                Enter the budget as a number (e.g. 70000).
+                Full allocated budget for the project (e.g. 70000).
+              </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="spentAmount">Amount spent</FieldLabel>
+              <Input
+                id="spentAmount"
+                value={form.spentAmount}
+                onChange={handleChange("spentAmount")}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0"
+              />
+              <FieldDescription>
+                How much has already been used (optional; defaults to 0).
               </FieldDescription>
             </Field>
             <Field>

@@ -2,7 +2,7 @@ import { Project, Role, ProjectMemberRole, QuestionStatus } from "@/app/generate
 
 export type ProjectStageStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED";
 
-export type ProjectWithRelations = Omit<Project, 'budget'> & {
+export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> & {
   ministry: {
     name: string;
     id: string;
@@ -59,7 +59,8 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
     createdAt: Date;
     updatedAt: Date;
   }[];
-  budget: string;
+  totalBudget: string;
+  spentAmount: string;
 }
 
 export interface ProjectMember {

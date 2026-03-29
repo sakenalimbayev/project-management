@@ -47,6 +47,7 @@ model User {
   firstName String?
   lastName  String?
   name      String?
+  title     String?
   email     String   @unique
   emailVerified DateTime?
   password  String?
@@ -105,11 +106,12 @@ model VerificationToken {
 }
 
 model Project {
-  id          String        @id @default(uuid())
-  name        String
-  description String?
-  budget      Decimal       @db.Decimal(15, 2)
-  status      ProjectStatus @default(PLANNED)
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  totalBudget  Decimal       @db.Decimal(15, 2)
+  spentAmount  Decimal       @default(0) @db.Decimal(15, 2)
+  status       ProjectStatus @default(PLANNED)
 
   ownerId String
   owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])

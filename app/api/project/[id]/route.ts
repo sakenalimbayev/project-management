@@ -39,7 +39,8 @@ export async function GET(
 
     const serializedProject = {
       ...project,
-      budget: project.budget.toString(),
+      totalBudget: project.totalBudget.toString(),
+      spentAmount: project.spentAmount.toString(),
     };
 
     return NextResponse.json({ data: serializedProject });

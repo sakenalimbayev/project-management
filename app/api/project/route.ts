@@ -1,10 +1,8 @@
-import { Project, ProjectStatus } from "@/app/generated/prisma";
+import { ProjectStatus } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-
-type CreateProjectDTO = Omit<Project, "createdAt" | "updatedAt" | "id">;
 
 export async function GET() {
   try {
@@ -20,9 +18,10 @@ export async function GET() {
       }
     });
 
-    const serializedProjects = projects.map(project => ({
+    const serializedProjects = projects.map((project) => ({
       ...project,
-      budget: project.budget.toString(),
+      totalBudget: project.totalBudget.toString(),
+      spentAmount: project.spentAmount.toString(),
     }));
 
     return NextResponse.json({ data: serializedProjects })
@@ -55,7 +54,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: CreateProjectDTO = await request.json();
+    const raw = await request.json();
+    const {
+      name,
+      description,
+      ministryId,
+      locationId,
+      totalBudget,
+      budget: legacyBudget,
+      spentAmount,
+      status,
+    } = raw as Record<string, unknown>;
+
+    const resolvedTotal =
+      (typeof totalBudget === "string" || typeof totalBudget === "number"
+        ? String(totalBudget)
+        : null) ??
+      (typeof legacyBudget === "string" || typeof legacyBudget === "number"
+        ? String(legacyBudget)
+        : null);
+
+    if (
+      typeof name !== "string" ||
+      typeof ministryId !== "string" ||
+      typeof locationId !== "string" ||
+      !resolvedTotal
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
     // Ensure ownerId comes from the authenticated admin user
     const ownerId = (session.user as any).id as string | undefined;
@@ -66,11 +95,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const spent =
+      typeof spentAmount === "string" || typeof spentAmount === "number"
+        ? String(spentAmount)
+        : "0";
+
     const project = await prisma.project.create({
       data: {
-        ...body,
+        name,
+        description:
+          typeof description === "string" ? description : undefined,
+        ministryId,
+        locationId,
+        totalBudget: resolvedTotal,
+        spentAmount: spent,
         ownerId,
-        status: (body as any).status ?? ProjectStatus.PLANNED,
+        status:
+          (status as ProjectStatus | undefined) ?? ProjectStatus.PLANNED,
       },
     });
 

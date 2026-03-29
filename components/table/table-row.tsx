@@ -74,7 +74,7 @@ const TableRow: FC<TableRowProps> = ({ project }) => {
                 </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {project.budget}
+                {project.totalBudget}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {project.location.city ?? project.location.region}

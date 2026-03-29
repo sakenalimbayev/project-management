@@ -9,6 +9,9 @@ import { getProjectById } from "@/services/api/projects/projects";
 import { LocationMapWidget } from "@/components/location-map-widget";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { ProjectBudgetSection } from "@/components/project-budget-section";
+import { formatProjectMemberRole } from "@/lib/format-project-member-role";
+import Link from "next/link";
 
 export default async function ProjectPage({
     params,
@@ -123,21 +126,12 @@ export default async function ProjectPage({
                 {/* Right column */}
                 <div className="space-y-8">
                     {/* Budget */}
-                    <Card className="mx-auto w-full">
-                        <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <CardTitle>Budget</CardTitle>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        Edit
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            ${project.budget}
-                        </CardContent>
-                    </Card>
+                    <ProjectBudgetSection
+                        projectId={project.id}
+                        totalBudget={project.totalBudget}
+                        spentAmount={project.spentAmount}
+                        canEdit={canEditProject}
+                    />
                     {/* Location */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
@@ -181,7 +175,11 @@ export default async function ProjectPage({
                                     const placeholderAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`;
 
                                     return (
-                                        <div key={member.id} className="flex items-center gap-3">
+                                        <Link
+                                            key={member.id}
+                                            href={`/users/${member.userId}`}
+                                            className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
                                             <Avatar>
                                                 <AvatarImage
                                                     src={member.user.avatar ?? placeholderAvatar}
@@ -192,15 +190,15 @@ export default async function ProjectPage({
                                                     {(member.user.lastName?.charAt(0) ?? "")}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">
+                                            <div className="flex min-w-0 flex-1 flex-col">
+                                                <span className="font-medium truncate">
                                                     {fullName}
                                                 </span>
                                                 <span className="text-sm text-muted-foreground">
-                                                    {member.user.role}
+                                                    {formatProjectMemberRole(member.role)}
                                                 </span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     );
                                 })}
                             </div>
