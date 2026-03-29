@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const locations = await prisma.location.findMany();
+    const locations = await prisma.location.findMany({
+      orderBy: [{ city: "asc" }, { region: "asc" }],
+    });
 
     return NextResponse.json({ data: locations });
   } catch (error) {
@@ -24,4 +26,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

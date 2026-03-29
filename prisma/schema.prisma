@@ -171,9 +171,11 @@ model Ministry {
 }
  
 model Location {
-  id      String   @id @default(uuid())
-  city    String?
-  region  String?
+  id        String   @id @default(uuid())
+  city      String?
+  region    String?
+  latitude  Float?
+  longitude Float?
 
   projects Project[]
 

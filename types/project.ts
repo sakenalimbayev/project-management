@@ -11,6 +11,8 @@ export type ProjectWithRelations = Omit<Project, 'budget'> & {
     id: string;
     region: string | null;
     city: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   members: {
     id: string;

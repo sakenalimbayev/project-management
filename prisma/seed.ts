@@ -21,11 +21,11 @@ async function main() {
 
   // ---- Locations ----
   const locations = [
-    { city: 'Astana', region: null },
-    { city: 'Almaty', region: null },
-    { city: 'Shymkent', region: null },
-    { city: null, region: 'Akmola' },
-    { city: 'Karaganda', region: 'Karagandy' }
+    { city: 'Astana', region: null, latitude: 51.1694, longitude: 71.4491 },
+    { city: 'Almaty', region: null, latitude: 43.238949, longitude: 76.889709 },
+    { city: 'Shymkent', region: null, latitude: 42.341783, longitude: 69.590329 },
+    { city: null, region: 'Akmola', latitude: 53.2833, longitude: 69.3833 },
+    { city: 'Karaganda', region: 'Karagandy', latitude: 49.8028, longitude: 73.0885 },
   ]
 
   for (const loc of locations) {
@@ -44,6 +44,14 @@ async function main() {
 
     if (!exists) {
       await prisma.location.create({ data: loc })
+    } else {
+      await prisma.location.update({
+        where: { id: exists.id },
+        data: {
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        },
+      })
     }
   }
 }

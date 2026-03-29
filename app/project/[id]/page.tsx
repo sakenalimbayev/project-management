@@ -6,7 +6,7 @@ import { Typography } from "@/components/ui/typography";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
-import { MapPin } from "lucide-react";
+import { LocationMapWidget } from "@/components/location-map-widget";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 
@@ -151,12 +151,12 @@ export default async function ProjectPage({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center gap-2 text-sm text-gray-900">
-                                <MapPin className="w-4 h-4 text-gray-500" />
-                                <span>
-                                    {project.location.city ?? project.location.region ?? "Location not specified"}
-                                </span>
-                            </div>
+                            <LocationMapWidget
+                                city={project.location.city}
+                                region={project.location.region}
+                                latitude={project.location.latitude}
+                                longitude={project.location.longitude}
+                            />
                         </CardContent>
                     </Card>
                     {/* Team Members */}
