@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/header/header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { auth } from "@/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,18 +21,27 @@ export const metadata: Metadata = {
   description: "Project Management Application",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const sessionUser = session?.user
+    ? {
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        role: (session.user as { role?: string }).role ?? null,
+      }
+    : null;
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider defaultOpen>
-          <AppSidebar variant="inset" />
+          <AppSidebar variant="inset" user={sessionUser} />
           <SidebarInset>
             <Header />
             {children}
