@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 
 export async function GET() {
   try {
@@ -113,6 +114,14 @@ export async function POST(request: NextRequest) {
         status:
           (status as ProjectStatus | undefined) ?? ProjectStatus.PLANNED,
       },
+    });
+
+    await notifyProjectMembers(project.id, {
+      type: "PROJECT_CREATED",
+      title: "Создан новый проект",
+      message: `Проект "${project.name}" был успешно создан`,
+      category: "Проекты",
+      actorLabel: resolveActorLabel(session.user as { name?: string | null; email?: string | null; role?: string | null }),
     });
 
     return NextResponse.json({ project });

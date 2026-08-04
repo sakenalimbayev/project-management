@@ -64,6 +64,8 @@ model User {
   sessions           Session[]
   authoredQuestions  Question[]       @relation("QuestionAuthor")
   moderatedQuestions Question[]       @relation("QuestionModerator")
+  notifications      Notification[]   @relation("NotificationRecipient")
+  notificationPreference NotificationPreference?
 }
 
 model Account {
@@ -125,6 +127,7 @@ model Project {
   members ProjectMember[]
   questions Question[]
   stages    ProjectStage[]
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -197,6 +200,7 @@ model Question {
   project    Project @relation(fields: [projectId], references: [id])
   author     User?   @relation("QuestionAuthor", fields: [authorId], references: [id])
   approvedBy User?   @relation("QuestionModerator", fields: [approvedById], references: [id])
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -204,5 +208,53 @@ model Question {
   @@index([projectId])
   @@index([authorId])
   @@index([status])
+}
+
+enum NotificationType {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  QUESTION_SUBMITTED
+  QUESTION_ANSWERED
+  QUESTION_REJECTED
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  type        NotificationType
+  title       String
+  message     String
+  category    String
+  actorLabel  String
+  important   Boolean          @default(false)
+  readAt      DateTime?
+  archivedAt  DateTime?
+
+  recipientId String
+  recipient   User    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@index([recipientId, archivedAt])
+}
+
+model NotificationPreference {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  email Boolean @default(true)
+  push  Boolean @default(true)
+  sms   Boolean @default(false)
+  slack Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
 }
 

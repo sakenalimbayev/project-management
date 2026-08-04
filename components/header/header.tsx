@@ -1,8 +1,9 @@
 import { auth } from "@/auth";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "../ui/input";
 import { LoginDialog } from "../dialog/login-dialog";
 import { UserPanelHeader } from "../user-panel-header/user-panel-header";
+import { NotificationBell } from "./notification-bell";
 
 export const Header = async () => {
   const session = await auth();
@@ -17,21 +18,17 @@ export const Header = async () => {
           <Input
             id="search"
             type="text"
-            placeholder="Поиск по проектам..."
+            placeholder="Поиск по проектам, органам, регионам..."
             className="h-10 rounded-full pl-9"
           />
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent"
-          aria-label="Уведомления"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
         {session?.user ? (
-          <UserPanelHeader userName={displayName} />
+          <>
+            <NotificationBell userEmail={session.user.email} />
+            <UserPanelHeader userName={displayName} />
+          </>
         ) : (
           <LoginDialog />
         )}

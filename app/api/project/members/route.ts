@@ -1,5 +1,7 @@
 import { Project } from "@/app/generated/prisma";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatUserDisplayName, notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 import { ProjectWithRelations } from "@/types/project";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
@@ -56,9 +58,18 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ 
+        const session = await auth();
+        await notifyProjectMembers(body.projectId, {
+            type: "PROJECT_UPDATED",
+            title: "Изменен состав проекта",
+            message: `${formatUserDisplayName(user)} добавлен(а) в проект "${project.name}"`,
+            category: "Проекты",
+            actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
+        });
+
+        return NextResponse.json({
             data: projectMember,
-            message: "Team member added successfully" 
+            message: "Team member added successfully"
         }, { status: 201 });
     } catch (error) {
         if (isPrismaError(error)) {

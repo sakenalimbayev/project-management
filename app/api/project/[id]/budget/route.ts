@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { isPrismaError } from "@/utils/is-prisma-error";
+import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
@@ -70,6 +71,14 @@ export async function PATCH(
         totalBudget: totalStr,
         spentAmount: spentStr,
       },
+    });
+
+    await notifyProjectMembers(projectId, {
+      type: "PROJECT_UPDATED",
+      title: "Изменен бюджет проекта",
+      message: `Обновлены бюджетные показатели проекта "${project.name}"`,
+      category: "Проекты",
+      actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
     });
 
     return NextResponse.json({

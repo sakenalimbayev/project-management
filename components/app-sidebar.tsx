@@ -6,14 +6,15 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
-  BarChart3,
+  Bell,
+  Blocks,
   Building2,
   BookOpen,
-  FileText,
+  CalendarClock,
   LayoutGrid,
-  Map,
   MapPin,
   MoreVertical,
+  Settings,
   ShieldCheck,
   Users,
   type LucideIcon,
@@ -48,19 +49,20 @@ type NavItem = {
   icon: LucideIcon
 }
 
-const registryNav: NavItem[] = [
+const administrationNav: NavItem[] = [
   { title: "Проекты", url: "/", icon: LayoutGrid },
-  { title: "Карта проектов", url: "#", icon: Map },
-  { title: "Аналитика", url: "#", icon: BarChart3 },
-  { title: "Отчеты", url: "#", icon: FileText },
-]
-
-const referenceNav: NavItem[] = [
   { title: "Государственные органы", url: "#", icon: Building2 },
   { title: "Регионы", url: "#", icon: MapPin },
   { title: "Пользователи", url: "#", icon: Users },
   { title: "Роли", url: "#", icon: ShieldCheck },
   { title: "Справочники", url: "#", icon: BookOpen },
+]
+
+const systemNav: NavItem[] = [
+  { title: "Уведомления", url: "/notifications", icon: Bell },
+  { title: "События", url: "#", icon: CalendarClock },
+  { title: "Настройки", url: "#", icon: Settings },
+  { title: "Интеграции", url: "#", icon: Blocks },
 ]
 
 const getInitials = (label: string) =>
@@ -126,8 +128,8 @@ export function AppSidebar({
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavGroup label="Реестр проектов" items={registryNav} pathname={pathname} />
-        <NavGroup label="Справочники" items={referenceNav} pathname={pathname} />
+        <NavGroup label="Администрирование" items={administrationNav} pathname={pathname} />
+        <NavGroup label="Система" items={systemNav} pathname={pathname} />
       </SidebarContent>
       <SidebarFooter>
         {user ? (

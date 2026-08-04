@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatUserDisplayName, notifyAdmins, notifyUser } from "@/lib/notifications";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -46,6 +47,31 @@ export async function POST(request: NextRequest) {
         authorId: userId,
         status: "PENDING",
       },
+    });
+
+    const author = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, firstName: true, lastName: true, email: true },
+    });
+
+    await notifyUser(userId, {
+      type: "QUESTION_SUBMITTED",
+      title: "Вопрос отправлен",
+      message: "Ваш вопрос находится на рассмотрении",
+      category: "Обращения",
+      actorLabel: "system",
+      projectId: body.projectId,
+      questionId: question.id,
+    });
+
+    await notifyAdmins({
+      type: "QUESTION_SUBMITTED",
+      title: "Новое обращение",
+      message: `Поступило новое обращение от пользователя ${author ? formatUserDisplayName(author) : "неизвестного пользователя"}`,
+      category: "Обращения",
+      actorLabel: "user",
+      projectId: body.projectId,
+      questionId: question.id,
     });
 
     return NextResponse.json(

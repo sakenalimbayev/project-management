@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatUserDisplayName, notifyAdmins, notifyUser, resolveActorLabel } from "@/lib/notifications";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -32,7 +33,14 @@ export async function PATCH(
 
     const question = await prisma.question.findUnique({
       where: { id: questionId },
-      select: { id: true, projectId: true, status: true },
+      select: {
+        id: true,
+        projectId: true,
+        status: true,
+        authorId: true,
+        author: { select: { name: true, firstName: true, lastName: true, email: true } },
+        project: { select: { name: true } },
+      },
     });
 
     if (!question) {
@@ -55,6 +63,12 @@ export async function PATCH(
       );
     }
 
+    const actorLabel = resolveActorLabel(
+      session?.user as { name?: string | null; email?: string | null; role?: string | null },
+      "moderation"
+    );
+    const authorDisplay = question.author ? formatUserDisplayName(question.author) : "пользователя";
+
     if (body.action === "reject") {
       const updated = await prisma.question.update({
         where: { id: questionId },
@@ -64,6 +78,29 @@ export async function PATCH(
           approvedAt: new Date(),
         },
       });
+
+      if (question.authorId) {
+        await notifyUser(question.authorId, {
+          type: "QUESTION_REJECTED",
+          title: "Ответ эксперта",
+          message: `Ваш вопрос по проекту "${question.project.name}" был отклонён модератором`,
+          category: "Обращения",
+          actorLabel,
+          important: true,
+          projectId: question.projectId,
+          questionId: question.id,
+        });
+      }
+      await notifyAdmins({
+        type: "QUESTION_REJECTED",
+        title: "Ответ эксперта",
+        message: `Вопрос пользователя ${authorDisplay} по проекту "${question.project.name}" был отклонён`,
+        category: "Обращения",
+        actorLabel,
+        projectId: question.projectId,
+        questionId: question.id,
+      });
+
       return NextResponse.json({ data: updated });
     }
 
@@ -76,6 +113,28 @@ export async function PATCH(
         approvedById: userId,
         approvedAt: new Date(),
       },
+    });
+
+    if (question.authorId) {
+      await notifyUser(question.authorId, {
+        type: "QUESTION_ANSWERED",
+        title: "Ответ эксперта",
+        message: `Эксперт ответил на ваш вопрос по проекту "${question.project.name}"`,
+        category: "Обращения",
+        actorLabel,
+        important: true,
+        projectId: question.projectId,
+        questionId: question.id,
+      });
+    }
+    await notifyAdmins({
+      type: "QUESTION_ANSWERED",
+      title: "Ответ эксперта",
+      message: `Эксперт ответил на вопрос пользователя ${authorDisplay} по проекту "${question.project.name}"`,
+      category: "Обращения",
+      actorLabel,
+      projectId: question.projectId,
+      questionId: question.id,
     });
 
     return NextResponse.json({ data: updated });

@@ -12,6 +12,7 @@ type PaginationBarProps = {
     onPageChange: (page: number) => void;
     onPageSizeChange: (size: number) => void;
     pageSizeOptions?: number[];
+    itemLabel?: string;
 };
 
 const getPageList = (current: number, total: number): (number | "ellipsis")[] => {
@@ -39,6 +40,7 @@ export const PaginationBar: FC<PaginationBarProps> = ({
     onPageChange,
     onPageSizeChange,
     pageSizeOptions = [10, 25, 50],
+    itemLabel = "записей",
 }) => {
     const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
     const start = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -48,7 +50,7 @@ export const PaginationBar: FC<PaginationBarProps> = ({
     return (
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-                Показано {start}–{end} из {totalItems} записей
+                Показано {start}–{end} из {totalItems} {itemLabel}
             </p>
             <div className="flex items-center gap-2">
                 <button
