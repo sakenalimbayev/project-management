@@ -3,6 +3,7 @@
 import { ProjectBudgetWidget } from "@/components/project-budget-widget";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -59,11 +60,11 @@ export function ProjectBudgetSection({
     const totalNum = Number(total);
     const spentNum = Number(spent);
     if (Number.isNaN(totalNum) || totalNum <= 0) {
-      setError("Total budget must be a positive number.");
+      setError("Общий бюджет должен быть положительным числом.");
       return;
     }
     if (Number.isNaN(spentNum) || spentNum < 0) {
-      setError("Spent amount must be zero or a positive number.");
+      setError("Потраченная сумма должна быть нулём или положительным числом.");
       return;
     }
 
@@ -80,14 +81,14 @@ export function ProjectBudgetSection({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(
-          typeof json?.error === "string" ? json.error : "Could not save budget."
+          typeof json?.error === "string" ? json.error : "Не удалось сохранить бюджет."
         );
         return;
       }
       setOpen(false);
       router.refresh();
     } catch {
-      setError("Network error. Try again.");
+      setError("Ошибка сети. Попробуйте снова.");
     } finally {
       setSaving(false);
     }
@@ -97,7 +98,7 @@ export function ProjectBudgetSection({
     <Card className="mx-auto w-full">
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
-          <CardTitle>Budget</CardTitle>
+          <CardTitle>Бюджет проекта</CardTitle>
           {canEdit ? (
             <Button
               variant="outline"
@@ -105,7 +106,8 @@ export function ProjectBudgetSection({
               type="button"
               onClick={() => handleOpenChange(true)}
             >
-              Edit
+              <Pencil className="h-4 w-4" />
+              Редактировать
             </Button>
           ) : null}
         </div>
@@ -113,16 +115,17 @@ export function ProjectBudgetSection({
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Edit budget</DialogTitle>
+                <DialogTitle>Изменить бюджет</DialogTitle>
                 <DialogDescription>
-                  Update total allocation and amount spent. Global admins and
-                  project administrators can change these values.
+                  Обновите общий бюджет и потраченную сумму. Изменять эти
+                  значения могут глобальные администраторы и администраторы
+                  проекта.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-2">
                 <Field>
                   <FieldLabel htmlFor="edit-total-budget">
-                    Total budget
+                    Общий бюджет
                   </FieldLabel>
                   <Input
                     id="edit-total-budget"
@@ -133,12 +136,12 @@ export function ProjectBudgetSection({
                     onChange={(e) => setTotal(e.target.value)}
                   />
                   <FieldDescription>
-                    Full budget allocated to this project.
+                    Полный бюджет, выделенный на этот проект.
                   </FieldDescription>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="edit-spent-amount">
-                    Amount spent
+                    Потрачено
                   </FieldLabel>
                   <Input
                     id="edit-spent-amount"
@@ -149,8 +152,8 @@ export function ProjectBudgetSection({
                     onChange={(e) => setSpent(e.target.value)}
                   />
                   <FieldDescription>
-                    Total spent to date (can exceed total for tracking
-                    overruns).
+                    Сумма, потраченная на данный момент (может превышать
+                    бюджет для отслеживания перерасхода).
                   </FieldDescription>
                 </Field>
                 {error ? (
@@ -166,10 +169,10 @@ export function ProjectBudgetSection({
                   onClick={() => handleOpenChange(false)}
                   disabled={saving}
                 >
-                  Cancel
+                  Отмена
                 </Button>
                 <Button type="button" onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? "Сохранение…" : "Сохранить"}
                 </Button>
               </DialogFooter>
             </DialogContent>

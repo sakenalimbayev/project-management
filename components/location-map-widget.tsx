@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MapPin } from "lucide-react";
+import { ExternalLink, MapPin } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -37,7 +37,7 @@ export function LocationMapWidget({
   longitude,
 }: LocationMapWidgetProps) {
   const [open, setOpen] = useState(false);
-  const label = city ?? region ?? "Location not specified";
+  const label = city ?? region ?? "Местоположение не указано";
   const hasCoords =
     latitude != null &&
     longitude != null &&
@@ -73,8 +73,9 @@ export function LocationMapWidget({
             interactive={false}
           />
         </div>
-        <p className="px-3 py-2 text-xs text-muted-foreground">
-          Click to open interactive map
+        <p className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-blue-600">
+          Открыть на интерактивной карте
+          <ExternalLink className="h-3 w-3" />
         </p>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>

@@ -20,13 +20,13 @@ export const ProjectDescriptionDialog: FC<ProjectDescriptionDialogProps> = ({ pr
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">Learn more</Button>
+                <Button variant="outline" size="sm">Показать больше</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>About the project</DialogTitle>
+                    <DialogTitle>О проекте</DialogTitle>
                     <DialogDescription>
-                        Enter your email below to login to your account
+                        Полное описание проекта
                     </DialogDescription>
                 </DialogHeader>
                 <Typography variant="p">{projectDescription}</Typography>

@@ -3,6 +3,15 @@ import { Project, Role, ProjectMemberRole, QuestionStatus } from "@/app/generate
 export type ProjectStageStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED";
 
 export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> & {
+  owner: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    name?: string | null;
+    email: string;
+    avatar: string | null;
+    image?: string | null;
+  };
   ministry: {
     name: string;
     id: string;

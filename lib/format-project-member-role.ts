@@ -3,9 +3,9 @@ import type { ProjectMemberRole } from "@/app/generated/prisma";
 export function formatProjectMemberRole(role: ProjectMemberRole): string {
   switch (role) {
     case "PROJECT_ADMINISTRATOR":
-      return "Project administrator";
+      return "Администратор проекта";
     case "PROJECT_MEMBER":
-      return "Team member";
+      return "Участник команды";
     default:
       return role;
   }

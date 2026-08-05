@@ -55,12 +55,12 @@ export const ProjectQuestions = ({
       const data = await response.json().catch(() => ({}));
 
       if (response.status === 401) {
-        setSubmitError(data?.error ?? "Please sign in to ask a question.");
+        setSubmitError(data?.error ?? "Войдите, чтобы задать вопрос.");
         return;
       }
 
       if (!response.ok) {
-        setSubmitError(data?.error ?? "Failed to submit question.");
+        setSubmitError(data?.error ?? "Не удалось отправить вопрос.");
         return;
       }
 
@@ -78,7 +78,7 @@ export const ProjectQuestions = ({
         <>
           <div className="flex gap-2">
             <Input
-              placeholder="Ask a question about this project..."
+              placeholder="Задайте вопрос по проекту..."
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               onKeyDown={(e) => {
@@ -92,7 +92,7 @@ export const ProjectQuestions = ({
               onClick={handleSubmit}
               disabled={isSubmitting || !questionText.trim()}
             >
-              Send
+              Отправить
             </Button>
           </div>
           {submitError && (
@@ -102,9 +102,9 @@ export const ProjectQuestions = ({
           )}
           {submitSuccess && (
             <p className="text-sm text-muted-foreground">
-              Your question was submitted for review. You can track it under{" "}
+              Ваш вопрос отправлен на модерацию. Отследить его можно в{" "}
               <Link href="/profile" className="underline underline-offset-4">
-                Profile → My Questions
+                Профиль → Мои вопросы
               </Link>
               .
             </p>
@@ -112,15 +112,15 @@ export const ProjectQuestions = ({
         </>
       ) : (
         <Typography variant="muted" className="text-sm">
-          Sign in to ask a question. Your question will be reviewed by a project
-          administrator before it appears here.
+          Войдите, чтобы задать вопрос. Он появится здесь после проверки
+          администратором проекта.
         </Typography>
       )}
 
       <div className="space-y-4">
         {questions?.length === 0 ? (
           <Typography variant="muted" className="text-sm">
-            No published questions yet.
+            Пока нет опубликованных вопросов.
           </Typography>
         ) : (
           questions?.map((question) => (
@@ -134,16 +134,16 @@ export const ProjectQuestions = ({
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Show Answer
+                    Показать ответ
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Question</DialogTitle>
+                    <DialogTitle>Вопрос</DialogTitle>
                     <DialogDescription>{question.text}</DialogDescription>
                   </DialogHeader>
                   <Typography variant="p">
-                    {question.answer ?? "No answer has been provided yet."}
+                    {question.answer ?? "Ответ пока не предоставлен."}
                   </Typography>
                 </DialogContent>
               </Dialog>

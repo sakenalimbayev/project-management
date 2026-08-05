@@ -11,6 +11,7 @@ export async function GET(
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
+        owner: true,
         members: {
           include: {
             user: true

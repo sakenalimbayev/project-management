@@ -6,6 +6,13 @@ import { ProjectGantt } from "@/components/project-gantt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,8 +26,10 @@ import {
   mapStagesToGantt,
   type SerializedProjectStage,
 } from "@/lib/map-project-stages";
+import { STAGE_STATUS_LABELS } from "@/lib/stage-status";
 import type { StageStatus } from "@/app/generated/prisma";
 import { cn } from "@/lib/utils";
+import { Settings } from "lucide-react";
 
 type EditorRow = {
   key: string;
@@ -100,24 +109,24 @@ export function ProjectGanttSection({
     setError(null);
     const trimmed = rows.filter((r) => r.label.trim());
     if (trimmed.length === 0) {
-      setError("Add at least one stage with a label, or remove all to clear.");
+      setError("Добавьте хотя бы один этап с названием или удалите все, чтобы очистить.");
       return;
     }
     for (let i = 0; i < trimmed.length; i++) {
       const r = trimmed[i];
       if (r.endDate < r.startDate) {
-        setError(`Stage ${i + 1}: end date must be on or after start date.`);
+        setError(`Этап ${i + 1}: дата окончания не может быть раньше даты начала.`);
         return;
       }
       if (Number.isNaN(Number(r.plannedBudget)) || Number(r.plannedBudget) < 0) {
-        setError(`Stage ${i + 1}: planned budget must be zero or a positive number.`);
+        setError(`Этап ${i + 1}: плановый бюджет должен быть неотрицательным числом.`);
         return;
       }
     }
     const sum = trimmed.reduce((acc, r) => acc + Number(r.plannedBudget), 0);
     if (sum > Number(totalBudget)) {
       setError(
-        `Sum of stage budgets (${sum.toLocaleString()}) exceeds the project's total budget (${Number(totalBudget).toLocaleString()}).`
+        `Сумма бюджетов этапов (${sum.toLocaleString("ru-RU")}) не может превышать общий бюджет проекта (${Number(totalBudget).toLocaleString("ru-RU")}).`
       );
       return;
     }
@@ -138,7 +147,7 @@ export function ProjectGanttSection({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error ?? "Failed to save stages.");
+        setError(data?.error ?? "Не удалось сохранить этапы.");
         return;
       }
       setOpen(false);
@@ -159,7 +168,7 @@ export function ProjectGanttSection({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error ?? "Failed to clear stages.");
+        setError(data?.error ?? "Не удалось очистить этапы.");
         return;
       }
       setRows([]);
@@ -171,204 +180,219 @@ export function ProjectGanttSection({
   };
 
   return (
-    <div className="space-y-3">
-      {canEdit && (
-        <div className="flex justify-end">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                Edit stages
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Project stages</DialogTitle>
-                <DialogDescription>
-                  Add, remove, or reorder stages. Dates define the Gantt bars.
-                  Saving replaces all stages for this project.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                {rows.map((row, index) => (
-                  <div
-                    key={row.key}
-                    className="space-y-2 rounded-md border border-border p-3"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Stage {index + 1}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-destructive"
-                        onClick={() =>
-                          setRows((prev) => prev.filter((r) => r.key !== row.key))
-                        }
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                    <Input
-                      placeholder="Label"
-                      value={row.label}
-                      onChange={(e) =>
-                        setRows((prev) =>
-                          prev.map((r) =>
-                            r.key === row.key
-                              ? { ...r, label: e.target.value }
-                              : r
-                          )
-                        )
-                      }
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">
-                          Start
-                        </label>
-                        <Input
-                          type="date"
-                          value={row.startDate}
-                          onChange={(e) =>
-                            setRows((prev) =>
-                              prev.map((r) =>
-                                r.key === row.key
-                                  ? { ...r, startDate: e.target.value }
-                                  : r
-                              )
-                            )
+    <Card className="mx-auto w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle>График проекта</CardTitle>
+            <CardDescription>
+              Этапы по времени (диаграмма Ганта). Этапы управляются
+              администраторами проекта.
+            </CardDescription>
+          </div>
+          {canEdit && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4" />
+                  Управление этапами
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Этапы проекта</DialogTitle>
+                  <DialogDescription>
+                    Добавляйте, удаляйте и меняйте порядок этапов. Даты
+                    определяют полосы диаграммы Ганта. Сохранение заменяет
+                    все этапы проекта.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  {rows.map((row, index) => (
+                    <div
+                      key={row.key}
+                      className="space-y-2 rounded-md border border-border p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Этап {index + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-destructive"
+                          onClick={() =>
+                            setRows((prev) => prev.filter((r) => r.key !== row.key))
                           }
-                        />
+                        >
+                          Удалить
+                        </Button>
                       </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">
-                          End
-                        </label>
-                        <Input
-                          type="date"
-                          value={row.endDate}
-                          onChange={(e) =>
-                            setRows((prev) =>
-                              prev.map((r) =>
-                                r.key === row.key
-                                  ? { ...r, endDate: e.target.value }
-                                  : r
-                              )
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-muted-foreground">
-                        Planned budget
-                      </label>
                       <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={row.plannedBudget}
+                        placeholder="Название этапа"
+                        value={row.label}
                         onChange={(e) =>
                           setRows((prev) =>
                             prev.map((r) =>
                               r.key === row.key
-                                ? { ...r, plannedBudget: e.target.value }
+                                ? { ...r, label: e.target.value }
                                 : r
                             )
                           )
                         }
                       />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-muted-foreground">
-                        Status
-                      </label>
-                      <select
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                        value={row.status}
-                        onChange={(e) =>
-                          setRows((prev) =>
-                            prev.map((r) =>
-                              r.key === row.key
-                                ? {
-                                    ...r,
-                                    status: e.target.value as StageStatus,
-                                  }
-                                : r
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs text-muted-foreground">
+                            Дата начала
+                          </label>
+                          <Input
+                            type="date"
+                            value={row.startDate}
+                            onChange={(e) =>
+                              setRows((prev) =>
+                                prev.map((r) =>
+                                  r.key === row.key
+                                    ? { ...r, startDate: e.target.value }
+                                    : r
+                                )
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-muted-foreground">
+                            Дата окончания
+                          </label>
+                          <Input
+                            type="date"
+                            value={row.endDate}
+                            onChange={(e) =>
+                              setRows((prev) =>
+                                prev.map((r) =>
+                                  r.key === row.key
+                                    ? { ...r, endDate: e.target.value }
+                                    : r
+                                )
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted-foreground">
+                          Плановый бюджет
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={row.plannedBudget}
+                          onChange={(e) =>
+                            setRows((prev) =>
+                              prev.map((r) =>
+                                r.key === row.key
+                                  ? { ...r, plannedBudget: e.target.value }
+                                  : r
+                              )
                             )
-                          )
-                        }
-                      >
-                        <option value="PLANNED">Planned</option>
-                        <option value="IN_PROGRESS">In progress</option>
-                        <option value="COMPLETED">Completed</option>
-                      </select>
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted-foreground">
+                          Статус
+                        </label>
+                        <select
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                          value={row.status}
+                          onChange={(e) =>
+                            setRows((prev) =>
+                              prev.map((r) =>
+                                r.key === row.key
+                                  ? {
+                                      ...r,
+                                      status: e.target.value as StageStatus,
+                                    }
+                                  : r
+                              )
+                            )
+                          }
+                        >
+                          {Object.entries(STAGE_STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setRows((prev) => [...prev, emptyRow()])}
-                >
-                  Add stage
-                </Button>
-                <p
-                  className={cn(
-                    "text-xs",
-                    budgetExceeded ? "text-destructive" : "text-muted-foreground"
-                  )}
-                >
-                  Stage budgets total: {budgetSum.toLocaleString()} of{" "}
-                  {Number(totalBudget).toLocaleString()}
-                </p>
-                {error && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {error}
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => setRows((prev) => [...prev, emptyRow()])}
+                  >
+                    Добавить этап
+                  </Button>
+                  <p
+                    className={cn(
+                      "text-xs",
+                      budgetExceeded ? "text-destructive" : "text-muted-foreground"
+                    )}
+                  >
+                    Бюджет по этапам: {budgetSum.toLocaleString("ru-RU")} из{" "}
+                    {Number(totalBudget).toLocaleString("ru-RU")}
                   </p>
-                )}
-              </div>
-              <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={saving}
-                  onClick={() => clearAll()}
-                >
-                  Clear all stages
-                </Button>
-                <div className="flex gap-2">
+                  {error && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
+                </div>
+                <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setOpen(false)}
+                    disabled={saving}
+                    onClick={() => clearAll()}
                   >
-                    Cancel
+                    Очистить все этапы
                   </Button>
-                  <Button
-                    type="button"
-                    disabled={saving || budgetExceeded}
-                    onClick={save}
-                  >
-                    {saving ? "Saving…" : "Save"}
-                  </Button>
-                </div>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setOpen(false)}
+                    >
+                      Отмена
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={saving || budgetExceeded}
+                      onClick={save}
+                    >
+                      {saving ? "Сохранение…" : "Сохранить"}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-      )}
-      {!ganttStages.length ? (
-        <Typography variant="muted" className="text-sm">
-          {canEdit
-            ? "No stages yet. Use Edit stages to add your schedule."
-            : "No schedule has been published for this project yet."}
-        </Typography>
-      ) : null}
-      <ProjectGantt stages={ganttStages} />
-    </div>
+      </CardHeader>
+      <CardContent>
+        {!ganttStages.length ? (
+          <Typography variant="muted" className="mb-3 text-sm">
+            {canEdit
+              ? "Этапы ещё не добавлены. Используйте «Управление этапами», чтобы задать график."
+              : "График для этого проекта пока не опубликован."}
+          </Typography>
+        ) : null}
+        <ProjectGantt stages={ganttStages} />
+      </CardContent>
+    </Card>
   );
 }

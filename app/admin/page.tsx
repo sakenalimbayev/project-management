@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { StageStatus } from "@/app/generated/prisma";
+import { STAGE_STATUS_LABELS } from "@/lib/stage-status";
 
 type ProjectFormState = {
   name: string;
@@ -52,12 +53,6 @@ type StageFormRow = {
   endDate: string;
   status: StageStatus;
   plannedBudget: string;
-};
-
-const STAGE_STATUS_LABELS: Record<StageStatus, string> = {
-  PLANNED: "Запланирован",
-  IN_PROGRESS: "В процессе",
-  COMPLETED: "Завершен",
 };
 
 function emptyStageRow(): StageFormRow {

@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { LoginDialog } from "@/components/dialog/login-dialog"
 import { cn } from "@/lib/utils"
+import { getInitials } from "@/lib/get-initials"
 
 type NavItem = {
   title: string
@@ -64,14 +65,6 @@ const systemNav: NavItem[] = [
   { title: "Настройки", url: "#", icon: Settings },
   { title: "Интеграции", url: "#", icon: Blocks },
 ]
-
-const getInitials = (label: string) =>
-  label
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("") || "?"
 
 type SidebarUser = {
   name: string | null
