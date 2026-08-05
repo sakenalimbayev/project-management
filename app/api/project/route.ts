@@ -4,6 +4,7 @@ import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
+import { validateStages, type StageInput, type ValidatedStage } from "@/lib/validate-stages";
 
 export async function GET() {
   try {
@@ -64,7 +65,9 @@ export async function POST(request: NextRequest) {
       totalBudget,
       budget: legacyBudget,
       spentAmount,
+      ownerId: requestedOwnerId,
       status,
+      stages: rawStages,
     } = raw as Record<string, unknown>;
 
     const resolvedTotal =
@@ -87,8 +90,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure ownerId comes from the authenticated admin user
-    const ownerId = (session.user as any).id as string | undefined;
+    // Admins may assign any existing user as owner; otherwise default to the caller.
+    const ownerId =
+      typeof requestedOwnerId === "string" && requestedOwnerId
+        ? requestedOwnerId
+        : ((session.user as any).id as string | undefined);
     if (!ownerId) {
       return NextResponse.json(
         { error: "Owner information missing" },
@@ -100,6 +106,24 @@ export async function POST(request: NextRequest) {
       typeof spentAmount === "string" || typeof spentAmount === "number"
         ? String(spentAmount)
         : "0";
+
+    let validatedStages: ValidatedStage[] = [];
+    if (rawStages !== undefined) {
+      if (!Array.isArray(rawStages)) {
+        return NextResponse.json(
+          { error: "stages must be an array." },
+          { status: 400 }
+        );
+      }
+      const validation = validateStages(
+        rawStages as StageInput[],
+        Number(resolvedTotal)
+      );
+      if (validation.error) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+      validatedStages = validation.stages;
+    }
 
     const project = await prisma.project.create({
       data: {
@@ -113,7 +137,21 @@ export async function POST(request: NextRequest) {
         ownerId,
         status:
           (status as ProjectStatus | undefined) ?? ProjectStatus.PLANNED,
+        stages:
+          validatedStages.length > 0
+            ? {
+                create: validatedStages.map((s, sortOrder) => ({
+                  label: s.label,
+                  startDate: s.startDate,
+                  endDate: s.endDate,
+                  status: s.status,
+                  plannedBudget: s.plannedBudget,
+                  sortOrder,
+                })),
+              }
+            : undefined,
       },
+      include: { stages: true },
     });
 
     await notifyProjectMembers(project.id, {

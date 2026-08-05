@@ -55,6 +55,7 @@ export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> 
     startDate: string;
     endDate: string;
     status: ProjectStageStatus;
+    plannedBudget: string;
     sortOrder: number;
     createdAt: Date;
     updatedAt: Date;

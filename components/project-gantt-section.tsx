@@ -20,6 +20,7 @@ import {
   type SerializedProjectStage,
 } from "@/lib/map-project-stages";
 import type { StageStatus } from "@/app/generated/prisma";
+import { cn } from "@/lib/utils";
 
 type EditorRow = {
   key: string;
@@ -27,6 +28,7 @@ type EditorRow = {
   startDate: string;
   endDate: string;
   status: StageStatus;
+  plannedBudget: string;
 };
 
 function emptyRow(): EditorRow {
@@ -39,6 +41,7 @@ function emptyRow(): EditorRow {
     startDate: start.toISOString().slice(0, 10),
     endDate: end.toISOString().slice(0, 10),
     status: "PLANNED",
+    plannedBudget: "0",
   };
 }
 
@@ -46,12 +49,14 @@ type ProjectGanttSectionProps = {
   projectId: string;
   stages: SerializedProjectStage[];
   canEdit: boolean;
+  totalBudget: string;
 };
 
 export function ProjectGanttSection({
   projectId,
   stages: initialStages,
   canEdit,
+  totalBudget,
 }: ProjectGanttSectionProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -80,9 +85,16 @@ export function ProjectGanttSection({
           startDate: s.startDate.slice(0, 10),
           endDate: s.endDate.slice(0, 10),
           status: s.status,
+          plannedBudget: s.plannedBudget,
         }))
     );
   }, [open, initialStages]);
+
+  const budgetSum = useMemo(
+    () => rows.reduce((sum, r) => sum + (Number(r.plannedBudget) || 0), 0),
+    [rows]
+  );
+  const budgetExceeded = budgetSum > Number(totalBudget);
 
   const save = async () => {
     setError(null);
@@ -97,6 +109,17 @@ export function ProjectGanttSection({
         setError(`Stage ${i + 1}: end date must be on or after start date.`);
         return;
       }
+      if (Number.isNaN(Number(r.plannedBudget)) || Number(r.plannedBudget) < 0) {
+        setError(`Stage ${i + 1}: planned budget must be zero or a positive number.`);
+        return;
+      }
+    }
+    const sum = trimmed.reduce((acc, r) => acc + Number(r.plannedBudget), 0);
+    if (sum > Number(totalBudget)) {
+      setError(
+        `Sum of stage budgets (${sum.toLocaleString()}) exceeds the project's total budget (${Number(totalBudget).toLocaleString()}).`
+      );
+      return;
     }
     setSaving(true);
     try {
@@ -109,6 +132,7 @@ export function ProjectGanttSection({
             startDate: r.startDate,
             endDate: r.endDate,
             status: r.status,
+            plannedBudget: r.plannedBudget,
           })),
         }),
       });
@@ -239,6 +263,26 @@ export function ProjectGanttSection({
                     </div>
                     <div>
                       <label className="mb-1 block text-xs text-muted-foreground">
+                        Planned budget
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={row.plannedBudget}
+                        onChange={(e) =>
+                          setRows((prev) =>
+                            prev.map((r) =>
+                              r.key === row.key
+                                ? { ...r, plannedBudget: e.target.value }
+                                : r
+                            )
+                          )
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-muted-foreground">
                         Status
                       </label>
                       <select
@@ -272,6 +316,15 @@ export function ProjectGanttSection({
                 >
                   Add stage
                 </Button>
+                <p
+                  className={cn(
+                    "text-xs",
+                    budgetExceeded ? "text-destructive" : "text-muted-foreground"
+                  )}
+                >
+                  Stage budgets total: {budgetSum.toLocaleString()} of{" "}
+                  {Number(totalBudget).toLocaleString()}
+                </p>
                 {error && (
                   <p className="text-sm text-destructive" role="alert">
                     {error}
@@ -295,7 +348,11 @@ export function ProjectGanttSection({
                   >
                     Cancel
                   </Button>
-                  <Button type="button" disabled={saving} onClick={save}>
+                  <Button
+                    type="button"
+                    disabled={saving || budgetExceeded}
+                    onClick={save}
+                  >
                     {saving ? "Saving…" : "Save"}
                   </Button>
                 </div>

@@ -50,6 +50,7 @@ export default async function ProjectPage({
                 .toISOString()
                 .slice(0, 10),
             status: s.status,
+            plannedBudget: s.plannedBudget,
             sortOrder: s.sortOrder,
         })
     );
@@ -94,6 +95,7 @@ export default async function ProjectPage({
                                 projectId={project.id}
                                 stages={serializedStages}
                                 canEdit={canEditProject}
+                                totalBudget={project.totalBudget}
                             />
                         </CardContent>
                     </Card>

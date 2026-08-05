@@ -8,6 +8,7 @@ export type SerializedProjectStage = {
   startDate: string;
   endDate: string;
   status: StageStatus;
+  plannedBudget: string;
   sortOrder: number;
 };
 

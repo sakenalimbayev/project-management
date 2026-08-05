@@ -138,13 +138,14 @@ model Project {
 }
 
 model ProjectStage {
-  id        String      @id @default(uuid())
-  projectId String
-  label     String
-  startDate DateTime    @db.Date
-  endDate   DateTime    @db.Date
-  status    StageStatus @default(PLANNED)
-  sortOrder Int         @default(0)
+  id            String      @id @default(uuid())
+  projectId     String
+  label         String
+  startDate     DateTime    @db.Date
+  endDate       DateTime    @db.Date
+  status        StageStatus @default(PLANNED)
+  plannedBudget Decimal     @default(0) @db.Decimal(15, 2)
+  sortOrder     Int         @default(0)
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
