@@ -1,13 +1,45 @@
 import { User } from "@/app/generated/prisma";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
 type CreateUserDTO = Omit<User, "createdAt" | "updatedAt" | "id">;
 
-export async function GET() {
+const userListSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  name: true,
+  email: true,
+  avatar: true,
+  image: true,
+  role: true,
+} as const;
+
+export async function GET(request: NextRequest) {
   try {
-    const users = await prisma.user.findMany();
+    const session = await auth();
+    if (!(session?.user as { id?: string })?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const q = request.nextUrl.searchParams.get("q")?.trim();
+
+    const users = await prisma.user.findMany({
+      where: q
+        ? {
+            OR: [
+              { firstName: { contains: q, mode: "insensitive" } },
+              { lastName: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : undefined,
+      select: userListSelect,
+      take: q ? 20 : undefined,
+    });
 
     return NextResponse.json({ data: users })
   } catch (error) {

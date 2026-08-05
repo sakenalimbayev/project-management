@@ -2,8 +2,6 @@ import { ProjectDescriptionDialog } from "@/components/dialog/project-descriptio
 import { ProjectGanttSection } from "@/components/project-gantt-section";
 import type { SerializedProjectStage } from "@/lib/map-project-stages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
 import { LocationMapWidget } from "@/components/location-map-widget";
@@ -11,11 +9,8 @@ import { StatusBadge } from "@/components/table/status-badge";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { ProjectBudgetSection } from "@/components/project-budget-section";
-import { formatProjectMemberRole } from "@/lib/format-project-member-role";
-import { getInitials } from "@/lib/get-initials";
-import { getAvatarColor } from "@/lib/avatar-color";
-import { cn } from "@/lib/utils";
-import { ArrowLeft, FileText, MoreVertical, Pencil, Users } from "lucide-react";
+import { ProjectTeamSection } from "@/components/project-team-section";
+import { ArrowLeft, FileText, MoreVertical, Pencil } from "lucide-react";
 import Link from "next/link";
 
 export default async function ProjectPage({
@@ -60,13 +55,6 @@ export default async function ProjectPage({
         })
     );
 
-    const ownerFullName =
-        project.owner.name ??
-        [project.owner.firstName, project.owner.lastName].filter(Boolean).join(" ") ??
-        project.owner.email;
-    const ownerMemberRow = project.members?.find((m) => m.userId === project.owner.id);
-    const ownerIsProjectAdmin = ownerMemberRow?.role === "PROJECT_ADMINISTRATOR";
-    const otherMembers = project.members?.filter((m) => m.userId !== project.owner.id) ?? [];
 
     return (
         <div className="px-6 py-8">
@@ -200,89 +188,12 @@ export default async function ProjectPage({
                         </CardContent>
                     </Card>
                     {/* Team Members */}
-                    <Card className="mx-auto w-full">
-                        <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <CardTitle>Команда проекта</CardTitle>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        <Pencil className="h-4 w-4" />
-                                        Редактировать
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <Link
-                                    href={`/users/${project.owner.id}`}
-                                    className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    <Avatar>
-                                        <AvatarFallback
-                                            className={cn("font-semibold text-white", getAvatarColor(project.owner.id))}
-                                        >
-                                            {getInitials(ownerFullName)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                        <span className="font-medium truncate">{ownerFullName}</span>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="text-sm text-muted-foreground">
-                                                Руководитель проекта
-                                            </span>
-                                            {ownerIsProjectAdmin && (
-                                                <Badge className="border-blue-200 bg-blue-50 text-blue-700">
-                                                    Администратор проекта
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                </Link>
-                                {otherMembers.map((member) => {
-                                    const fullName =
-                                        member.user.name ??
-                                        [member.user.firstName, member.user.lastName].filter(Boolean).join(" ") ??
-                                        member.user.email;
-
-                                    return (
-                                        <Link
-                                            key={member.id}
-                                            href={`/users/${member.userId}`}
-                                            className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        >
-                                            <Avatar>
-                                                <AvatarFallback
-                                                    className={cn("font-semibold text-white", getAvatarColor(member.userId))}
-                                                >
-                                                    {getInitials(fullName)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex min-w-0 flex-1 flex-col">
-                                                <span className="font-medium truncate">
-                                                    {fullName}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {formatProjectMemberRole(member.role)}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                            {canEditProject && (
-                                <Button
-                                    variant="outline"
-                                    className="mt-4 w-full"
-                                    disabled
-                                    title="Управление командой скоро будет доступно"
-                                >
-                                    <Users className="h-4 w-4" />
-                                    Управление командой
-                                </Button>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ProjectTeamSection
+                        projectId={project.id}
+                        members={project.members ?? []}
+                        ownerId={project.owner.id}
+                        canEdit={canEditProject}
+                    />
                 </div>
             </div>
         </div>
