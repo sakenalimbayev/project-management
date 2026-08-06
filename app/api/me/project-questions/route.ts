@@ -11,15 +11,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const adminMemberships = await prisma.projectMember.findMany({
-      where: {
-        userId,
-        role: "PROJECT_ADMINISTRATOR",
-      },
+    const memberships = await prisma.projectMember.findMany({
+      where: { userId },
       select: { projectId: true },
     });
 
-    const projectIds = adminMemberships.map((m) => m.projectId);
+    const projectIds = memberships.map((m) => m.projectId);
     if (projectIds.length === 0) {
       return NextResponse.json({ data: [] });
     }

@@ -53,13 +53,12 @@ export async function PATCH(
       where: {
         projectId: question.projectId,
         userId,
-        role: "PROJECT_ADMINISTRATOR",
       },
     });
 
     if (!isGlobalAdmin && !membership) {
       return NextResponse.json(
-        { error: "Only project administrators can moderate questions." },
+        { error: "Only project members can moderate questions." },
         { status: 403 }
       );
     }

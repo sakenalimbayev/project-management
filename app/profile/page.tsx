@@ -223,8 +223,8 @@ export default function ProfilePage() {
         <div className="space-y-6">
           {projectQuestions.length === 0 ? (
             <Typography variant="muted">
-              You are not a project administrator for any project, or there
-              are no questions yet.
+              You are not a member of any project, or there are no questions
+              yet.
             </Typography>
           ) : (
             projectQuestions.map((q) => (
