@@ -1,4 +1,5 @@
 import { ProjectDescriptionDialog } from "@/components/dialog/project-description-dialog";
+import { EditProjectDialog } from "@/components/dialog/edit-project-dialog";
 import { ProjectGanttSection } from "@/components/project-gantt-section";
 import type { SerializedProjectStage } from "@/lib/map-project-stages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,10 +80,11 @@ export default async function ProjectPage({
                 </div>
                 {canEditProject && (
                     <div className="flex items-center gap-2">
-                        <Button variant="outline">
-                            <Pencil className="h-4 w-4" />
-                            Редактировать проект
-                        </Button>
+                        <EditProjectDialog
+                            projectId={project.id}
+                            name={project.name}
+                            status={project.status}
+                        />
                         <Button
                             variant="outline"
                             size="icon"
