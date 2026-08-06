@@ -6,9 +6,16 @@ import { auth } from "@/auth";
 import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 import { validateStages, type StageInput, type ValidatedStage } from "@/lib/validate-stages";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const q = request.nextUrl.searchParams.get("q")?.trim();
+    const limitParam = request.nextUrl.searchParams.get("limit");
+    const limit = limitParam ? Math.min(50, Math.max(1, Number(limitParam) || 8)) : undefined;
+
     const projects = await prisma.project.findMany({
+      where: q ? { name: { contains: q, mode: "insensitive" } } : undefined,
+      orderBy: q ? { name: "asc" } : undefined,
+      take: limit,
       include: {
         members: {
           include: {
