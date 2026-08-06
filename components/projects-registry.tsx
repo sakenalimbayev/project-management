@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, ChevronDown, Filter, Plus, Search } from "lucide-react";
+import { ChevronDown, Filter, Plus, Search } from "lucide-react";
 import { FC, useMemo, useState } from "react";
 import { ProjectWithRelations } from "@/types/project";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PROJECT_STATUS_LABELS } from "@/lib/project-status";
 import { FilterSelect } from "@/components/table/filter-select";
+import { DateRangeFilter, type DateRange } from "@/components/table/date-range-filter";
 import { PaginationBar } from "@/components/table/pagination-bar";
 import { ProjectsExportMenu } from "@/components/table/projects-export-menu";
 import { ProjectsStatsCards } from "@/components/table/projects-stats-cards";
@@ -20,14 +21,13 @@ type ProjectsRegistryProps = {
 
 const ALL_REGIONS = "all";
 const ALL_STATUSES = "all";
-
-const formatDate = (date: Date) =>
-    date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+const EMPTY_DATE_RANGE: DateRange = { from: "", to: "" };
 
 export const ProjectsRegistry: FC<ProjectsRegistryProps> = ({ data }) => {
     const [search, setSearch] = useState("");
     const [region, setRegion] = useState(ALL_REGIONS);
     const [status, setStatus] = useState(ALL_STATUSES);
+    const [dateRange, setDateRange] = useState<DateRange>(EMPTY_DATE_RANGE);
     const [filtersOpen, setFiltersOpen] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -63,25 +63,24 @@ export const ProjectsRegistry: FC<ProjectsRegistryProps> = ({ data }) => {
 
     const filtered = useMemo(() => {
         const term = search.trim().toLowerCase();
+        const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
+        const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59.999`) : null;
         return data.filter((project) => {
             const matchesSearch = !term || project.name.toLowerCase().includes(term);
             const projectRegion = project.location.city ?? project.location.region;
             const matchesRegion = region === ALL_REGIONS || projectRegion === region;
             const matchesStatus = status === ALL_STATUSES || project.status === status;
-            return matchesSearch && matchesRegion && matchesStatus;
+            const createdAt = new Date(project.createdAt);
+            const matchesDate = (!fromDate || createdAt >= fromDate) && (!toDate || createdAt <= toDate);
+            return matchesSearch && matchesRegion && matchesStatus && matchesDate;
         });
-    }, [data, search, region, status]);
+    }, [data, search, region, status, dateRange]);
 
     const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
     const currentPage = Math.min(page, pageCount);
     const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     const resetToFirstPage = () => setPage(1);
-
-    const dateRangeLabel = useMemo(() => {
-        const year = new Date().getFullYear();
-        return `${formatDate(new Date(year, 0, 1))} - ${formatDate(new Date(year, 11, 31))}`;
-    }, []);
 
     return (
         <div className="flex flex-col gap-6">
@@ -124,10 +123,10 @@ export const ProjectsRegistry: FC<ProjectsRegistryProps> = ({ data }) => {
                         options={statusOptions}
                         aria-label="Статус"
                     />
-                    <div className="flex h-9 items-center gap-2 rounded-md border border-input px-3 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 shrink-0" />
-                        <span className="whitespace-nowrap">{dateRangeLabel}</span>
-                    </div>
+                    <DateRangeFilter
+                        value={dateRange}
+                        onChange={(next) => { setDateRange(next); resetToFirstPage(); }}
+                    />
                     <div className="relative flex-1">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
