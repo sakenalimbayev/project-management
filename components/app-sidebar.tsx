@@ -59,12 +59,13 @@ const administrationNav: NavItem[] = [
   { title: "Справочники", url: "#", icon: BookOpen },
 ]
 
-const systemNav: NavItem[] = [
+const baseSystemNav: NavItem[] = [
   { title: "Уведомления", url: "/notifications", icon: Bell },
-  { title: "События", url: "#", icon: CalendarClock },
   { title: "Настройки", url: "#", icon: Settings },
   { title: "Интеграции", url: "#", icon: Blocks },
 ]
+
+const auditLogNavItem: NavItem = { title: "Журнал аудита", url: "/audit-log", icon: CalendarClock }
 
 type SidebarUser = {
   name: string | null
@@ -104,13 +105,18 @@ function NavGroup({ label, items, pathname }: { label: string; items: NavItem[];
 
 export function AppSidebar({
   user = null,
+  canViewAuditLog = false,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { user?: SidebarUser | null }) {
+}: React.ComponentProps<typeof Sidebar> & { user?: SidebarUser | null; canViewAuditLog?: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
 
   const displayName = user?.name || user?.email?.split("@")[0] || "Гость"
   const roleLabel = user?.role === "ADMIN" ? "Администратор" : "Участник"
+
+  const systemNav: NavItem[] = canViewAuditLog
+    ? [baseSystemNav[0], auditLogNavItem, ...baseSystemNav.slice(1)]
+    : baseSystemNav
 
   return (
     <Sidebar collapsible="icon" {...props}>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
 import { validateStages, type StageInput } from "@/lib/validate-stages";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -69,12 +70,25 @@ export async function PUT(
       orderBy: { sortOrder: "asc" },
     });
 
+    const actorLabel = resolveActorLabel(
+      session?.user as { name?: string | null; email?: string | null; role?: string | null }
+    );
+
     await notifyProjectMembers(projectId, {
       type: "PROJECT_UPDATED",
       title: "Изменен план-график проекта",
       message: `Обновлены этапы проекта "${project.name}"`,
       category: "Проекты",
-      actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
+      actorLabel,
+    });
+
+    await recordAuditLog({
+      action: "PROJECT_ATTRIBUTE_CHANGED",
+      attribute: "stages",
+      projectId,
+      summary: `Обновлён план-график проекта "${project.name}" (${updated.length} ${updated.length === 1 ? "этап" : "этапов"})`,
+      actorLabel,
+      actorId: userId,
     });
 
     return NextResponse.json({ data: updated });

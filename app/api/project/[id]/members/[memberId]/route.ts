@@ -2,6 +2,7 @@ import { ProjectMemberRole } from "@/app/generated/prisma";
 import { auth } from "@/auth";
 import { formatProjectMemberRole } from "@/lib/format-project-member-role";
 import { formatUserDisplayName, notifyProjectMembers, notifyUser, resolveActorLabel } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { isPrismaError } from "@/utils/is-prisma-error";
@@ -56,12 +57,26 @@ export async function PATCH(
       include: { user: true },
     });
 
+    const actorLabel = resolveActorLabel(
+      session?.user as { name?: string | null; email?: string | null; role?: string | null }
+    );
+    const roleChangeSummary = `Роль ${formatUserDisplayName(updated.user)} в проекте "${project.name}" изменена на «${formatProjectMemberRole(role)}»`;
+
     await notifyProjectMembers(projectId, {
       type: "PROJECT_UPDATED",
       title: "Изменен состав проекта",
-      message: `Роль ${formatUserDisplayName(updated.user)} в проекте "${project.name}" изменена на «${formatProjectMemberRole(role)}»`,
+      message: roleChangeSummary,
       category: "Проекты",
-      actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
+      actorLabel,
+    });
+
+    await recordAuditLog({
+      action: "PROJECT_ATTRIBUTE_CHANGED",
+      attribute: "members",
+      projectId,
+      summary: roleChangeSummary,
+      actorLabel,
+      actorId: userId,
     });
 
     return NextResponse.json({
@@ -118,12 +133,13 @@ export async function DELETE(
     await prisma.projectMember.delete({ where: { id: memberId } });
 
     const actorLabel = resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null });
+    const removalSummary = `${formatUserDisplayName(existing.user)} удален(а) из проекта "${project.name}"`;
 
     await Promise.all([
       notifyProjectMembers(projectId, {
         type: "PROJECT_UPDATED",
         title: "Изменен состав проекта",
-        message: `${formatUserDisplayName(existing.user)} удален(а) из проекта "${project.name}"`,
+        message: removalSummary,
         category: "Проекты",
         actorLabel,
       }),
@@ -133,6 +149,14 @@ export async function DELETE(
         message: `Вы больше не являетесь участником проекта "${project.name}"`,
         category: "Проекты",
         actorLabel,
+      }),
+      recordAuditLog({
+        action: "PROJECT_ATTRIBUTE_CHANGED",
+        attribute: "members",
+        projectId,
+        summary: removalSummary,
+        actorLabel,
+        actorId: userId,
       }),
     ]);
 

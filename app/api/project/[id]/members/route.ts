@@ -2,6 +2,7 @@ import { ProjectMemberRole } from "@/app/generated/prisma";
 import { auth } from "@/auth";
 import { formatProjectMemberRole } from "@/lib/format-project-member-role";
 import { formatUserDisplayName, notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { isPrismaError } from "@/utils/is-prisma-error";
@@ -57,12 +58,26 @@ export async function POST(
       include: { user: true },
     });
 
+    const actorLabel = resolveActorLabel(
+      session?.user as { name?: string | null; email?: string | null; role?: string | null }
+    );
+    const memberSummary = `${formatUserDisplayName(user)} добавлен(а) в проект "${project.name}" в роли «${formatProjectMemberRole(role)}»`;
+
     await notifyProjectMembers(projectId, {
       type: "PROJECT_UPDATED",
       title: "Изменен состав проекта",
-      message: `${formatUserDisplayName(user)} добавлен(а) в проект "${project.name}" в роли «${formatProjectMemberRole(role)}»`,
+      message: memberSummary,
       category: "Проекты",
-      actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
+      actorLabel,
+    });
+
+    await recordAuditLog({
+      action: "PROJECT_ATTRIBUTE_CHANGED",
+      attribute: "members",
+      projectId,
+      summary: memberSummary,
+      actorLabel,
+      actorId: userId,
     });
 
     return NextResponse.json(

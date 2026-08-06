@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatUserDisplayName, notifyAdmins, notifyUser, resolveActorLabel } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -101,6 +102,15 @@ export async function PATCH(
         questionId: question.id,
       });
 
+      await recordAuditLog({
+        action: "QUESTION_ANSWERED",
+        projectId: question.projectId,
+        questionId: question.id,
+        summary: `Вопрос пользователя ${authorDisplay} по проекту "${question.project.name}" отклонён модератором`,
+        actorLabel,
+        actorId: userId,
+      });
+
       return NextResponse.json({ data: updated });
     }
 
@@ -135,6 +145,15 @@ export async function PATCH(
       actorLabel,
       projectId: question.projectId,
       questionId: question.id,
+    });
+
+    await recordAuditLog({
+      action: "QUESTION_ANSWERED",
+      projectId: question.projectId,
+      questionId: question.id,
+      summary: `Эксперт ответил на вопрос пользователя ${authorDisplay} по проекту "${question.project.name}"`,
+      actorLabel,
+      actorId: userId,
     });
 
     return NextResponse.json({ data: updated });

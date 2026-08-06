@@ -5,6 +5,7 @@ import { Header } from "@/components/header/header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { auth } from "@/auth";
+import { canViewAuditLog } from "@/lib/audit-log-auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,10 @@ export default async function RootLayout({
         role: (session.user as { role?: string }).role ?? null,
       }
     : null;
+  const showAuditLog = await canViewAuditLog(
+    (session?.user as { id?: string })?.id,
+    (session?.user as { role?: string })?.role
+  );
 
   return (
     <html lang="en">
@@ -41,7 +46,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider defaultOpen>
-          <AppSidebar variant="inset" user={sessionUser} />
+          <AppSidebar variant="inset" user={sessionUser} canViewAuditLog={showAuditLog} />
           <SidebarInset>
             <Header />
             {children}

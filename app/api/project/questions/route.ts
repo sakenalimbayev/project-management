@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatUserDisplayName, notifyAdmins, notifyUser } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -72,6 +73,15 @@ export async function POST(request: NextRequest) {
       actorLabel: "user",
       projectId: body.projectId,
       questionId: question.id,
+    });
+
+    await recordAuditLog({
+      action: "QUESTION_ADDED",
+      projectId: body.projectId,
+      questionId: question.id,
+      summary: `Новый вопрос по проекту "${project.name}" от ${author ? formatUserDisplayName(author) : "неизвестного пользователя"}`,
+      actorLabel: author ? formatUserDisplayName(author) : "user",
+      actorId: userId,
     });
 
     return NextResponse.json(

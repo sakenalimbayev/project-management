@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/audit-log";
+import { PROJECT_STATUS_LABELS } from "@/lib/project-status";
 import { ProjectStatus } from "@/app/generated/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
@@ -122,13 +124,38 @@ export async function PATCH(
       data: { name, status },
     });
 
+    const actorLabel = resolveActorLabel(
+      session?.user as { name?: string | null; email?: string | null; role?: string | null }
+    );
+
     await notifyProjectMembers(projectId, {
       type: "PROJECT_UPDATED",
       title: "Изменены данные проекта",
       message: `Обновлены название и статус проекта "${updated.name}"`,
       category: "Проекты",
-      actorLabel: resolveActorLabel(session?.user as { name?: string | null; email?: string | null; role?: string | null }),
+      actorLabel,
     });
+
+    if (project.name !== name) {
+      await recordAuditLog({
+        action: "PROJECT_ATTRIBUTE_CHANGED",
+        attribute: "name",
+        projectId,
+        summary: `Название проекта изменено с "${project.name}" на "${name}"`,
+        actorLabel,
+        actorId: userId,
+      });
+    }
+    if (project.status !== status) {
+      await recordAuditLog({
+        action: "PROJECT_ATTRIBUTE_CHANGED",
+        attribute: "status",
+        projectId,
+        summary: `Статус проекта изменён с "${PROJECT_STATUS_LABELS[project.status]}" на "${PROJECT_STATUS_LABELS[status]}"`,
+        actorLabel,
+        actorId: userId,
+      });
+    }
 
     return NextResponse.json({
       data: {

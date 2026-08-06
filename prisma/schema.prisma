@@ -66,6 +66,7 @@ model User {
   moderatedQuestions Question[]       @relation("QuestionModerator")
   notifications      Notification[]   @relation("NotificationRecipient")
   notificationPreference NotificationPreference?
+  auditLogEntries    AuditLogEntry[]  @relation("AuditLogActor")
 }
 
 model Account {
@@ -128,6 +129,7 @@ model Project {
   questions Question[]
   stages    ProjectStage[]
   notifications Notification[]
+  auditLogEntries AuditLogEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -202,6 +204,7 @@ model Question {
   author     User?   @relation("QuestionAuthor", fields: [authorId], references: [id])
   approvedBy User?   @relation("QuestionModerator", fields: [approvedById], references: [id])
   notifications Notification[]
+  auditLogEntries AuditLogEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,5 +260,34 @@ model NotificationPreference {
   slack Boolean @default(false)
 
   updatedAt DateTime @updatedAt
+}
+
+enum AuditLogAction {
+  PROJECT_ATTRIBUTE_CHANGED
+  QUESTION_ADDED
+  QUESTION_ANSWERED
+}
+
+model AuditLogEntry {
+  id         String         @id @default(uuid())
+  action     AuditLogAction
+  attribute  String?
+  summary    String
+  actorLabel String
+
+  actorId String?
+  actor   User?   @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([action, createdAt])
+  @@index([attribute])
 }
 
