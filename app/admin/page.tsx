@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BulkImportProjectsDialog } from "@/components/dialog/bulk-import-projects-dialog";
 import {
   FieldSet,
   FieldGroup,
@@ -314,16 +315,19 @@ export default function AdminPage() {
         </Link>
       </Button>
 
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-          <CalendarRange className="h-5 w-5 text-blue-600" />
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+            <CalendarRange className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Создание нового проекта</h1>
+            <p className="text-sm text-muted-foreground">
+              Заполните информацию о проекте для его создания
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Создание нового проекта</h1>
-          <p className="text-sm text-muted-foreground">
-            Заполните информацию о проекте для его создания
-          </p>
-        </div>
+        <BulkImportProjectsDialog />
       </div>
 
       <form onSubmit={handleSubmit}>
