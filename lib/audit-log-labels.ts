@@ -3,6 +3,8 @@ import { AuditLogAction } from "@/app/generated/prisma";
 export const AUDIT_LOG_ATTRIBUTES = [
   "name",
   "status",
+  "description",
+  "location",
   "totalBudget",
   "spentAmount",
   "stages",
@@ -14,6 +16,8 @@ export type AuditLogAttribute = (typeof AUDIT_LOG_ATTRIBUTES)[number];
 export const AUDIT_LOG_ATTRIBUTE_LABELS: Record<AuditLogAttribute, string> = {
   name: "Название",
   status: "Статус",
+  description: "Описание",
+  location: "Регион реализации",
   totalBudget: "Общий бюджет",
   spentAmount: "Потраченная сумма",
   stages: "План-график",

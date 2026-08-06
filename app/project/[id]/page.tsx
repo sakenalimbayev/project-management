@@ -1,17 +1,17 @@
-import { ProjectDescriptionDialog } from "@/components/dialog/project-description-dialog";
 import { EditProjectDialog } from "@/components/dialog/edit-project-dialog";
 import { ProjectGanttSection } from "@/components/project-gantt-section";
 import type { SerializedProjectStage } from "@/lib/map-project-stages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
-import { LocationMapWidget } from "@/components/location-map-widget";
+import { ProjectDescriptionSection } from "@/components/project-description-section";
+import { ProjectLocationSection } from "@/components/project-location-section";
 import { StatusBadge } from "@/components/table/status-badge";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { ProjectBudgetSection } from "@/components/project-budget-section";
 import { ProjectTeamSection } from "@/components/project-team-section";
-import { ArrowLeft, FileText, MoreVertical, Pencil } from "lucide-react";
+import { ArrowLeft, FileText, MoreVertical } from "lucide-react";
 import Link from "next/link";
 
 export default async function ProjectPage({
@@ -101,29 +101,11 @@ export default async function ProjectPage({
                 {/* Left column */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Description section */}
-                    <Card className="mx-auto w-full">
-                        <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <CardTitle>Описание проекта</CardTitle>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        <Pencil className="h-4 w-4" />
-                                        Редактировать
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="line-clamp-6 whitespace-pre-line text-sm leading-7 text-gray-700">
-                                {project.description || "Описание отсутствует."}
-                            </p>
-                            {project.description && (
-                                <div className="mt-3">
-                                    <ProjectDescriptionDialog projectDescription={project.description} />
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ProjectDescriptionSection
+                        projectId={project.id}
+                        description={project.description}
+                        canEdit={canEditProject}
+                    />
                     {/* Timeline */}
                     <ProjectGanttSection
                         projectId={project.id}
@@ -134,20 +116,10 @@ export default async function ProjectPage({
                     {/* Q&A */}
                     <Card className="mx-auto w-full">
                         <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <div>
-                                    <CardTitle>Вопросы и ответы</CardTitle>
-                                    <CardDescription>
-                                        Обсуждение деталей проекта с командой
-                                    </CardDescription>
-                                </div>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        <Pencil className="h-4 w-4" />
-                                        Редактировать
-                                    </Button>
-                                )}
-                            </div>
+                            <CardTitle>Вопросы и ответы</CardTitle>
+                            <CardDescription>
+                                Обсуждение деталей проекта с командой
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <ProjectQuestions
@@ -168,27 +140,11 @@ export default async function ProjectPage({
                         canEdit={canEditProject}
                     />
                     {/* Location */}
-                    <Card className="mx-auto w-full">
-                        <CardHeader>
-                            <div className="flex items-center justify-between gap-2">
-                                <CardTitle>Регион реализации</CardTitle>
-                                {canEditProject && (
-                                    <Button variant="outline" size="sm">
-                                        <Pencil className="h-4 w-4" />
-                                        Редактировать
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <LocationMapWidget
-                                city={project.location.city}
-                                region={project.location.region}
-                                latitude={project.location.latitude}
-                                longitude={project.location.longitude}
-                            />
-                        </CardContent>
-                    </Card>
+                    <ProjectLocationSection
+                        projectId={project.id}
+                        location={project.location}
+                        canEdit={canEditProject}
+                    />
                     {/* Team Members */}
                     <ProjectTeamSection
                         projectId={project.id}
