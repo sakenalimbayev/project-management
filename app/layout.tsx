@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Project Management",
-  description: "Project Management Application",
+  title: "Открытые проекты",
+  description: "Открытые проекты",
 };
 
 export default async function RootLayout({
