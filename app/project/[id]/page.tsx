@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ProjectQuestions } from "@/components/questions/project-questions";
 import { getProjectById } from "@/services/api/projects/projects";
 import { ProjectDescriptionSection } from "@/components/project-description-section";
+import { ProjectDocumentsSection } from "@/components/project-documents-section";
 import { ProjectLocationSection } from "@/components/project-location-section";
 import { StatusBadge } from "@/components/table/status-badge";
 import { auth } from "@/auth";
@@ -129,6 +130,12 @@ export default async function ProjectPage({
                             />
                         </CardContent>
                     </Card>
+                    {/* Supporting documents */}
+                    <ProjectDocumentsSection
+                        projectId={project.id}
+                        documents={project.documents ?? []}
+                        canEdit={canEditProject}
+                    />
                 </div>
                 {/* Right column */}
                 <div className="space-y-8">

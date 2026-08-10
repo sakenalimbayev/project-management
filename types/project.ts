@@ -69,6 +69,16 @@ export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> 
     createdAt: Date;
     updatedAt: Date;
   }[];
+  documents?: {
+    id: string;
+    projectId: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedById: string | null;
+    createdAt: Date;
+  }[];
   totalBudget: string;
   spentAmount: string;
 }

@@ -9,6 +9,7 @@ export const AUDIT_LOG_ATTRIBUTES = [
   "spentAmount",
   "stages",
   "members",
+  "documents",
 ] as const;
 
 export type AuditLogAttribute = (typeof AUDIT_LOG_ATTRIBUTES)[number];
@@ -22,6 +23,7 @@ export const AUDIT_LOG_ATTRIBUTE_LABELS: Record<AuditLogAttribute, string> = {
   spentAmount: "Потраченная сумма",
   stages: "План-график",
   members: "Команда проекта",
+  documents: "Документы",
 };
 
 export function isAuditLogAttribute(value: string): value is AuditLogAttribute {

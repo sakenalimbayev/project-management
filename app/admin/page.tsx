@@ -13,6 +13,7 @@ import {
   Trash2,
   User,
   Wallet,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { StageStatus } from "@/app/generated/prisma";
 import { STAGE_STATUS_LABELS } from "@/lib/stage-status";
+import { formatFileSize } from "@/lib/format-file-size";
+import { uploadProjectDocuments } from "@/services/api/projects/documents";
 
 type ProjectFormState = {
   name: string;
@@ -85,6 +88,7 @@ export default function AdminPage() {
     locationId: "",
   });
   const [stages, setStages] = useState<StageFormRow[]>([]);
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([]);
   const [ministries, setMinistries] = useState<Array<{ id: string; name: string }>>([]);
@@ -161,6 +165,16 @@ export default function AdminPage() {
 
   const removeStage = (key: string) => {
     setStages((prev) => prev.filter((s) => s.key !== key));
+  };
+
+  const handleDocumentFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    setDocumentFiles((prev) => [...prev, ...selected]);
+    e.target.value = "";
+  };
+
+  const removeDocumentFile = (index: number) => {
+    setDocumentFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const numericTotalBudget = Number(form.totalBudget) || 0;
@@ -246,6 +260,14 @@ export default function AdminPage() {
       if (!res.ok) {
         setError(data?.error ?? "Не удалось создать проект.");
         return;
+      }
+
+      if (documentFiles.length > 0) {
+        try {
+          await uploadProjectDocuments(data.project.id, documentFiles);
+        } catch {
+          // Project was already created; documents can be added from its page.
+        }
       }
 
       router.push(`/project/${data.project.id}`);
@@ -670,6 +692,50 @@ export default function AdminPage() {
                 Бюджет по этапам: {stagesBudgetSum.toLocaleString("ru-RU")} из{" "}
                 {numericTotalBudget.toLocaleString("ru-RU")}
               </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Подтверждающие документы</h2>
+            <p className="text-sm text-muted-foreground">
+              Прикрепите подтверждающие документы проекта (необязательно)
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.txt"
+              onChange={handleDocumentFilesChange}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent text-sm shadow-xs outline-none file:mr-3 file:h-full file:border-0 file:border-r file:border-input file:bg-muted file:px-3 file:text-sm file:font-medium focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            />
+            {documentFiles.length > 0 && (
+              <ul className="space-y-1.5">
+                {documentFiles.map((file, index) => (
+                  <li
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
+                  >
+                    <span className="min-w-0 truncate">{file.name}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeDocumentFile(index)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Удалить файл"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

@@ -67,6 +67,7 @@ model User {
   notifications      Notification[]   @relation("NotificationRecipient")
   notificationPreference NotificationPreference?
   auditLogEntries    AuditLogEntry[]  @relation("AuditLogActor")
+  uploadedDocuments  ProjectDocument[] @relation("ProjectDocumentUploader")
 }
 
 model Account {
@@ -128,6 +129,7 @@ model Project {
   members ProjectMember[]
   questions Question[]
   stages    ProjectStage[]
+  documents ProjectDocument[]
   notifications Notification[]
   auditLogEntries AuditLogEntry[]
 
@@ -137,6 +139,24 @@ model Project {
   @@index([status])
   @@index([ministryId])
   @@index([locationId])
+}
+
+model ProjectDocument {
+  id        String @id @default(uuid())
+  projectId String
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  uploadedById String?
+  uploadedBy   User?   @relation("ProjectDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
 }
 
 model ProjectStage {

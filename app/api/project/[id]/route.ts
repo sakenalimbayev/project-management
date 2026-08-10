@@ -34,6 +34,9 @@ export async function GET(
           where: { status: "APPROVED" },
           orderBy: { createdAt: "desc" },
         },
+        documents: {
+          orderBy: { createdAt: "desc" },
+        },
       }
     });
 
