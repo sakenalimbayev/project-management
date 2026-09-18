@@ -29,7 +29,7 @@ const toExportRows = (projects: ProjectWithRelations[]) =>
     projects.map((project) => ({
         name: project.name,
         ministry: project.ministry.name,
-        region: project.location.city ?? project.location.region ?? "",
+        region: project.location?.city ?? project.location?.region ?? "",
         totalBudget: project.totalBudget,
         spentAmount: project.spentAmount,
         status: PROJECT_STATUS_LABELS[project.status],

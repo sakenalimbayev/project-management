@@ -6,8 +6,8 @@ import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 import { recordAuditLog } from "@/lib/audit-log";
 import { NextRequest, NextResponse } from "next/server";
 
-function formatLocation(location: { city: string | null; region: string | null }): string {
-  return location.city ?? location.region ?? "не указан";
+function formatLocation(location: { city: string | null; region: string | null } | null): string {
+  return location?.city ?? location?.region ?? "не указан";
 }
 
 export async function PATCH(

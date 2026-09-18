@@ -44,6 +44,19 @@ export async function POST(
       );
     }
 
+    let documentTypes: (string | null)[] = [];
+    const documentTypesRaw = formData.get("documentTypes");
+    if (typeof documentTypesRaw === "string") {
+      try {
+        const parsed = JSON.parse(documentTypesRaw);
+        if (Array.isArray(parsed)) {
+          documentTypes = parsed.map((v) => (typeof v === "string" && v.trim() ? v.trim() : null));
+        }
+      } catch {
+        return NextResponse.json({ error: "Invalid documentTypes payload." }, { status: 400 });
+      }
+    }
+
     for (const file of files) {
       const validationError = validateProjectDocumentFile(file);
       if (validationError) {
@@ -52,7 +65,7 @@ export async function POST(
     }
 
     const documents = await Promise.all(
-      files.map(async (file) => {
+      files.map(async (file, index) => {
         const fileUrl = await uploadProjectDocumentFile(projectId, file);
         return prisma.projectDocument.create({
           data: {
@@ -61,6 +74,7 @@ export async function POST(
             fileUrl,
             fileSize: file.size,
             mimeType: file.type,
+            documentType: documentTypes[index] ?? null,
             uploadedById: userId,
           },
         });

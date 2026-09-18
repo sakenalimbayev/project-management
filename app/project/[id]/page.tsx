@@ -12,6 +12,8 @@ import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { ProjectBudgetSection } from "@/components/project-budget-section";
 import { ProjectTeamSection } from "@/components/project-team-section";
+import { ProjectGoalSection } from "@/components/project-goal-section";
+import { ProjectMetaSection } from "@/components/project-meta-section";
 import { ArrowLeft, FileText, MoreVertical } from "lucide-react";
 import Link from "next/link";
 
@@ -107,6 +109,8 @@ export default async function ProjectPage({
                         description={project.description}
                         canEdit={canEditProject}
                     />
+                    {/* Goal & KPIs */}
+                    <ProjectGoalSection goal={project.goal} kpis={project.kpis ?? []} />
                     {/* Timeline */}
                     <ProjectGanttSection
                         projectId={project.id}
@@ -139,19 +143,39 @@ export default async function ProjectPage({
                 </div>
                 {/* Right column */}
                 <div className="space-y-8">
+                    {/* Meta info */}
+                    <ProjectMetaSection
+                        shortName={project.shortName}
+                        category={project.category}
+                        projectType={project.projectType}
+                        scale={project.scale}
+                        responsibleOrganization={project.responsibleOrganization}
+                        projectManagerName={project.projectManagerName}
+                        officialContactEmail={project.officialContactEmail}
+                        startDate={project.startDate}
+                        plannedEndDate={project.plannedEndDate}
+                        actualEndDate={project.actualEndDate}
+                        infoAsOfDate={project.infoAsOfDate}
+                        nextUpdateDate={project.nextUpdateDate}
+                        visibility={project.visibility}
+                    />
                     {/* Budget */}
                     <ProjectBudgetSection
                         projectId={project.id}
                         totalBudget={project.totalBudget}
                         spentAmount={project.spentAmount}
+                        fundingSources={project.fundingSources}
+                        yearlyBudgets={project.yearlyBudgets ?? []}
                         canEdit={canEditProject}
                     />
                     {/* Location */}
-                    <ProjectLocationSection
-                        projectId={project.id}
-                        location={project.location}
-                        canEdit={canEditProject}
-                    />
+                    {project.location && (
+                        <ProjectLocationSection
+                            projectId={project.id}
+                            location={project.location}
+                            canEdit={canEditProject}
+                        />
+                    )}
                     {/* Team Members */}
                     <ProjectTeamSection
                         projectId={project.id}

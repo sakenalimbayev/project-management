@@ -1,4 +1,15 @@
-import { PrismaClient, ProjectStatus, StageStatus, ProjectMemberRole, QuestionStatus, Role } from "@/app/generated/prisma";
+import {
+  PrismaClient,
+  ProjectStatus,
+  StageStatus,
+  ProjectMemberRole,
+  QuestionStatus,
+  Role,
+  ProjectType,
+  ProjectScale,
+  FundingSource,
+  ProjectVisibility,
+} from "@/app/generated/prisma";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -89,28 +100,81 @@ type QuestionSeed = {
   approvedByKey: string | null;
 };
 type MemberSeed = { userKey: string; role: ProjectMemberRole };
+type KpiSeed = { name: string; baselineValue: string; targetValue: string; unit: string | null };
 
 type ProjectSeed = {
   name: string;
+  shortName: string;
   description: string;
+  category: string;
+  projectType: ProjectType;
   ministry: (typeof MINISTRIES)[number];
+  responsibleOrganization: string;
+  contactSlug: string;
+  goal: string;
+  kpis: KpiSeed[];
+  scale: ProjectScale;
   location: keyof typeof LOCATIONS;
+  fundingSources: FundingSource[];
   totalBudget: number;
   spentAmount: number;
   status: ProjectStatus;
+  visibility?: ProjectVisibility;
   ownerKey: string;
   members: MemberSeed[];
   stages: StageSeed[];
   questions: QuestionSeed[];
 };
 
+/** Even-ish split of a project's total/spent budget across its stage date range. */
+function buildYearlyBudgets(total: number, spent: number, stages: StageSeed[]) {
+  const starts = stages.map((s) => s.start.getTime());
+  const ends = stages.map((s) => s.end.getTime());
+  const startYear = new Date(Math.min(...starts)).getFullYear();
+  const endYear = new Date(Math.max(...ends)).getFullYear();
+  const years: number[] = [];
+  for (let y = startYear; y <= endYear; y++) years.push(y);
+
+  const base = Math.floor(total / years.length);
+  const remainder = total - base * years.length;
+  let remainingSpent = spent;
+
+  return years.map((year, idx) => {
+    const plannedAmount = base + (idx === years.length - 1 ? remainder : 0);
+    const actualAmount = Math.max(0, Math.min(plannedAmount, remainingSpent));
+    remainingSpent -= actualAmount;
+    return { year, plannedAmount, actualAmount };
+  });
+}
+
+function projectDateRange(stages: StageSeed[]) {
+  const starts = stages.map((s) => s.start.getTime());
+  const ends = stages.map((s) => s.end.getTime());
+  return { start: new Date(Math.min(...starts)), end: new Date(Math.max(...ends)) };
+}
+
+const INFO_AS_OF_DATE = D("2026-08-15");
+const NEXT_UPDATE_DATE = D("2027-08-15");
+
 const PROJECTS: ProjectSeed[] = [
   {
     name: "Строительство многопрофильной больницы на 500 коек в г. Туркестан",
+    shortName: "Больница-500 Туркестан",
     description:
       "Строительство современного многопрофильного медицинского центра на 500 коек с отделениями кардиологии, онкологии и реанимации. Проект направлен на снижение нагрузки на существующие медучреждения Туркестанской области и повышение доступности высокотехнологичной медицинской помощи для населения региона.",
+    category: "Здравоохранение",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[0],
+    responsibleOrganization: "КГП «Туркестанская областная многопрофильная больница»",
+    contactSlug: "hospital-turkestan",
+    goal: "Повысить доступность специализированной медицинской помощи в Туркестанской области, сократив среднее время ожидания плановой госпитализации.",
+    kpis: [
+      { name: "Коечный фонд", baselineValue: "0", targetValue: "500", unit: "коек" },
+      { name: "Время ожидания плановой госпитализации", baselineValue: "21", targetValue: "5", unit: "дней" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "TURKESTAN",
+    fundingSources: ["REPUBLICAN_BUDGET"],
     totalBudget: 45_000_000_000,
     spentAmount: 18_500_000_000,
     status: "IN_PROGRESS",
@@ -133,10 +197,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Модернизация систем водоснабжения и водоотведения в Кызылординской области",
+    shortName: "Водоснабжение КЗО",
     description:
       "Комплексная реконструкция изношенных сетей водоснабжения и строительство новых очистных сооружений в населённых пунктах Кызылординской области. Проект обеспечит бесперебойный доступ к качественной питьевой воде для более 180 тысяч жителей и снизит потери воды в сетях с 38% до 12%.",
+    category: "ЖКХ и водоснабжение",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[8],
+    responsibleOrganization: "КГП «Кызылординский водоканал»",
+    contactSlug: "water-kyzylorda",
+    goal: "Обеспечить бесперебойный доступ к качественной питьевой воде для населения Кызылординской области.",
+    kpis: [
+      { name: "Охват качественным водоснабжением", baselineValue: "62", targetValue: "100", unit: "%" },
+      { name: "Потери воды в сетях", baselineValue: "38", targetValue: "12", unit: "%" },
+    ],
+    scale: "SINGLE_REGION",
     location: "KYZYLORDA",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 22_300_000_000,
     spentAmount: 22_300_000_000,
     status: "FINISHED",
@@ -158,10 +234,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "«Digital Almaty»: цифровизация государственных услуг в г. Алматы",
+    shortName: "Digital Almaty",
     description:
       "Перевод более 200 государственных услуг города Алматы в электронный формат на единой цифровой платформе. Проект включает создание мобильного приложения для жителей, интеграцию с eGov.kz и внедрение системы электронной очереди в ЦОНах города.",
+    category: "Электронное правительство",
+    projectType: "SERVICE_DIGITALIZATION",
     ministry: MINISTRIES[2],
+    responsibleOrganization: "ГКП на ПХВ «Центр цифровизации города Алматы»",
+    contactSlug: "digital-almaty",
+    goal: "Перевести государственные услуги города Алматы в электронный формат и повысить их доступность для жителей.",
+    kpis: [
+      { name: "Доля услуг в электронном формате", baselineValue: "45", targetValue: "95", unit: "%" },
+      { name: "Услуги на единой платформе", baselineValue: "0", targetValue: "200", unit: "услуг" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "ALMATY",
+    fundingSources: ["LOCAL_BUDGET", "REPUBLICAN_BUDGET"],
     totalBudget: 8_700_000_000,
     spentAmount: 5_200_000_000,
     status: "IN_PROGRESS",
@@ -184,10 +272,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Строительство второй линии Алматинского метрополитена",
+    shortName: "Метро Алматы-2",
     description:
       "Строительство второй линии метрополитена протяжённостью 12,3 км с 9 станциями, соединяющей западные и восточные районы города Алматы. Проект призван снизить транспортную нагрузку на автомобильные дороги города и сократить время в пути для более 300 тысяч пассажиров ежедневно.",
+    category: "Транспорт и инфраструктура",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[3],
+    responsibleOrganization: "КГП «Алматыметрокурылыс»",
+    contactSlug: "metro-almaty",
+    goal: "Снизить транспортную нагрузку на автомобильные дороги города Алматы и сократить время в пути пассажиров.",
+    kpis: [
+      { name: "Протяжённость линии", baselineValue: "0", targetValue: "12.3", unit: "км" },
+      { name: "Пассажиропоток", baselineValue: "0", targetValue: "300000", unit: "пассажиров/сутки" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "ALMATY",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 210_000_000_000,
     spentAmount: 62_000_000_000,
     status: "IN_PROGRESS",
@@ -211,13 +311,25 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Реконструкция автомобильной дороги «Астана – Петропавловск»",
+    shortName: "Дорога Астана–Петропавловск",
     description:
       "Реконструкция республиканской автомобильной дороги протяжённостью 286 км с расширением до 4 полос движения, устройством освещения и модернизацией мостовых переходов. Проект повысит безопасность дорожного движения и сократит время в пути между Астаной и Петропавловском на 40 минут.",
+    category: "Транспорт и инфраструктура",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[6],
+    responsibleOrganization: "РГП «Казахавтодор»",
+    contactSlug: "road-astana-petropavlovsk",
+    goal: "Повысить безопасность дорожного движения и сократить время в пути между Астаной и Петропавловском.",
+    kpis: [
+      { name: "Полосы движения", baselineValue: "2", targetValue: "4", unit: "полосы" },
+      { name: "Время в пути", baselineValue: "240", targetValue: "200", unit: "минут" },
+    ],
+    scale: "MULTIPLE_REGIONS",
     location: "PETROPAVLOVSK",
+    fundingSources: ["REPUBLICAN_BUDGET"],
     totalBudget: 95_000_000_000,
     spentAmount: 40_000_000_000,
-    status: "IN_PROGRESS",
+    status: "DELAYED",
     ownerKey: "OSPANOV",
     members: [
       { userKey: "SERIKOV", role: "PROJECT_ADMINISTRATOR" },
@@ -236,10 +348,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Строительство общеобразовательной школы на 1200 мест в г. Шымкент",
+    shortName: "Школа-1200 Шымкент",
     description:
       "Строительство новой типовой школы на 1200 ученических мест в микрорайоне «Нурсат» г. Шымкент для снижения дефицита ученических мест и ликвидации трёхсменного обучения в районе. Школа будет оснащена современными кабинетами естественных наук, спортивным залом и бассейном.",
+    category: "Образование",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[1],
+    responsibleOrganization: "Отдел образования акимата г. Шымкент",
+    contactSlug: "school-shymkent",
+    goal: "Ликвидировать дефицит ученических мест и трёхсменное обучение в микрорайоне «Нурсат».",
+    kpis: [
+      { name: "Ученические места", baselineValue: "0", targetValue: "1200", unit: "мест" },
+      { name: "Смены обучения", baselineValue: "3", targetValue: "2", unit: "смены" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "SHYMKENT",
+    fundingSources: ["LOCAL_BUDGET"],
     totalBudget: 6_500_000_000,
     spentAmount: 6_500_000_000,
     status: "FINISHED",
@@ -257,10 +381,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Модернизация энергоблоков Экибастузской ГРЭС-2",
+    shortName: "ГРЭС-2 Модернизация",
     description:
       "Модернизация двух энергоблоков Экибастузской ГРЭС-2 с установкой нового энергоэффективного оборудования и систем очистки дымовых газов. Проект повысит установленную мощность станции и снизит выбросы загрязняющих веществ в атмосферу в соответствии с экологическими стандартами.",
+    category: "Энергетика",
+    projectType: "MODERNIZATION",
     ministry: MINISTRIES[4],
+    responsibleOrganization: "АО «Станция Экибастузская ГРЭС-2»",
+    contactSlug: "gres-ekibastuz",
+    goal: "Повысить энергоэффективность и снизить выбросы загрязняющих веществ Экибастузской ГРЭС-2.",
+    kpis: [
+      { name: "Снижение выбросов", baselineValue: "0", targetValue: "45", unit: "%" },
+      { name: "Модернизированные энергоблоки", baselineValue: "0", targetValue: "2", unit: "блока" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "PAVLODAR",
+    fundingSources: ["ORGANIZATION_FUNDS"],
     totalBudget: 185_000_000_000,
     spentAmount: 30_000_000_000,
     status: "IN_PROGRESS",
@@ -282,10 +418,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Программа развития сельскохозяйственной инфраструктуры Костанайской области",
+    shortName: "Агроинфраструктура КЗО",
     description:
       "Строительство и модернизация элеваторов, овощехранилищ и мелиоративных систем в Костанайской области для повышения урожайности и снижения потерь сельскохозяйственной продукции. Программа охватывает 12 сельских округов и поддержит более 400 фермерских хозяйств.",
+    category: "Сельское хозяйство",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[5],
+    responsibleOrganization: "Управление сельского хозяйства акимата Костанайской области",
+    contactSlug: "agri-kostanay",
+    goal: "Повысить урожайность и снизить потери сельскохозяйственной продукции в Костанайской области.",
+    kpis: [
+      { name: "Охваченные сельские округа", baselineValue: "0", targetValue: "12", unit: "округов" },
+      { name: "Поддержанные фермерские хозяйства", baselineValue: "0", targetValue: "400", unit: "хозяйств" },
+    ],
+    scale: "SINGLE_REGION",
     location: "KOSTANAY",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 14_200_000_000,
     spentAmount: 9_000_000_000,
     status: "IN_PROGRESS",
@@ -308,10 +456,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Строительство арендного социального жилья в г. Актобе",
+    shortName: "Жилье-Актобе",
     description:
       "Строительство пяти многоквартирных домов арендного социального жилья на 480 квартир для очередников и социально уязвимых категорий населения города Актобе. Проект реализуется в рамках государственной программы жилищного строительства.",
+    category: "Жилищное строительство",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[3],
+    responsibleOrganization: "КГП «Актобе-Жилстройсервис»",
+    contactSlug: "housing-aktobe",
+    goal: "Обеспечить арендным социальным жильём очередников и социально уязвимые категории населения города Актобе.",
+    kpis: [
+      { name: "Построено квартир", baselineValue: "0", targetValue: "480", unit: "квартир" },
+      { name: "Многоквартирные дома", baselineValue: "0", targetValue: "5", unit: "домов" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "AKTOBE",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 11_300_000_000,
     spentAmount: 4_000_000_000,
     status: "IN_PROGRESS",
@@ -333,13 +493,25 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Создание индустриального парка «Karaganda Industrial Park»",
+    shortName: "Karaganda Industrial Park",
     description:
       "Создание индустриального парка с готовой инженерной инфраструктурой на территории 150 га для размещения предприятий металлообработки и машиностроения. Проект предусматривает создание более 3000 новых рабочих мест и привлечение отечественных и иностранных инвесторов.",
+    category: "Промышленность",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[3],
+    responsibleOrganization: "СЭЗ «Karaganda Industrial Park»",
+    contactSlug: "park-karaganda",
+    goal: "Создать индустриальный парк для развития металлообработки и машиностроения и привлечения инвесторов.",
+    kpis: [
+      { name: "Новые рабочие места", baselineValue: "0", targetValue: "3000", unit: "мест" },
+      { name: "Площадь парка", baselineValue: "0", targetValue: "150", unit: "га" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "KARAGANDA",
+    fundingSources: ["LOCAL_BUDGET", "ORGANIZATION_FUNDS"],
     totalBudget: 27_800_000_000,
     spentAmount: 3_500_000_000,
-    status: "PLANNED",
+    status: "SUSPENDED",
     ownerKey: "TASTANBEKOV",
     members: [
       { userKey: "KENZHEBAYEVA", role: "PROJECT_ADMINISTRATOR" },
@@ -357,10 +529,22 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Программа развития сельских территорий «Ауыл – Ел бесігі» в Атырауской области",
+    shortName: "Ауыл – Ел бесігі",
     description:
       "Комплексное благоустройство и развитие инфраструктуры 18 сёл Атырауской области: строительство дорог, водопроводов, объектов здравоохранения и образования в рамках государственной программы развития сельских территорий.",
+    category: "Сельское хозяйство",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[5],
+    responsibleOrganization: "Управление строительства акимата Атырауской области",
+    contactSlug: "rural-atyrau",
+    goal: "Улучшить инфраструктуру сельских территорий Атырауской области.",
+    kpis: [
+      { name: "Охваченные сёла", baselineValue: "0", targetValue: "18", unit: "сёл" },
+      { name: "Новые фельдшерско-акушерские пункты", baselineValue: "0", targetValue: "6", unit: "пунктов" },
+    ],
+    scale: "SINGLE_REGION",
     location: "ATYRAU",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 9_600_000_000,
     spentAmount: 9_600_000_000,
     status: "FINISHED",
@@ -377,10 +561,21 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Реконструкция и расширение аэропорта г. Уральск",
+    shortName: "Аэропорт Уральск",
     description:
       "Реконструкция взлётно-посадочной полосы и строительство нового пассажирского терминала аэропорта г. Уральск пропускной способностью 400 пассажиров в час. Проект повысит транспортную доступность Западно-Казахстанской области и позволит принимать среднемагистральные воздушные суда.",
+    category: "Транспорт и инфраструктура",
+    projectType: "MODERNIZATION",
     ministry: MINISTRIES[6],
+    responsibleOrganization: "АО «Аэропорт Уральск»",
+    contactSlug: "airport-uralsk",
+    goal: "Повысить транспортную доступность Западно-Казахстанской области.",
+    kpis: [
+      { name: "Пропускная способность терминала", baselineValue: "150", targetValue: "400", unit: "пасс./час" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "URALSK",
+    fundingSources: ["ORGANIZATION_FUNDS"],
     totalBudget: 18_900_000_000,
     spentAmount: 2_000_000_000,
     status: "PLANNED",
@@ -401,10 +596,21 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Строительство центра ядерной медицины в г. Семей",
+    shortName: "Ядерная медицина Семей",
     description:
       "Строительство центра ядерной медицины и лучевой терапии на базе Государственного медицинского университета г. Семей для ранней диагностики и лечения онкологических заболеваний. Центр будет оснащён ПЭТ-КТ сканером и линейными ускорителями последнего поколения.",
+    category: "Здравоохранение",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[0],
+    responsibleOrganization: "НАО «Государственный медицинский университет г. Семей»",
+    contactSlug: "medcenter-semey",
+    goal: "Обеспечить раннюю диагностику и лечение онкологических заболеваний в Восточно-Казахстанской области.",
+    kpis: [
+      { name: "Пропускная способность центра", baselineValue: "0", targetValue: "12000", unit: "пациентов/год" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "SEMEY",
+    fundingSources: ["REPUBLICAN_BUDGET"],
     totalBudget: 32_400_000_000,
     spentAmount: 11_000_000_000,
     status: "IN_PROGRESS",
@@ -427,10 +633,21 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Реновация исторического центра г. Туркестан к юбилейным мероприятиям",
+    shortName: "Туркестан-Реновация",
     description:
       "Реставрация памятников архитектуры и благоустройство исторического центра г. Туркестан вокруг мавзолея Ходжи Ахмеда Ясави, включая реконструкцию пешеходных зон, освещения и туристической инфраструктуры к юбилейным торжествам.",
+    category: "Культура и туризм",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[7],
+    responsibleOrganization: "ГУ «Дирекция по восстановлению историко-культурных объектов г. Туркестан»",
+    contactSlug: "renovation-turkestan",
+    goal: "Развить туристическую привлекательность исторического центра г. Туркестан.",
+    kpis: [
+      { name: "Рост туристического потока", baselineValue: "100", targetValue: "165", unit: "% к базовому" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "TURKESTAN",
+    fundingSources: ["REPUBLICAN_BUDGET", "LOCAL_BUDGET"],
     totalBudget: 16_700_000_000,
     spentAmount: 16_700_000_000,
     status: "FINISHED",
@@ -447,13 +664,25 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Развитие туристической инфраструктуры Каспийского побережья в Мангистауской области",
+    shortName: "Каспий Тур",
     description:
       "Создание туристической инфраструктуры на побережье Каспийского моря в Мангистауской области: строительство набережной, пляжных зон, гостиничных комплексов и подъездных дорог к природным достопримечательностям региона.",
+    category: "Туризм",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[7],
+    responsibleOrganization: "Управление туризма акимата Мангистауской области",
+    contactSlug: "tourism-aktau",
+    goal: "Создать туристическую инфраструктуру на побережье Каспийского моря в Мангистауской области.",
+    kpis: [
+      { name: "Протяжённость набережной", baselineValue: "0", targetValue: "5", unit: "км" },
+    ],
+    scale: "SINGLE_REGION",
     location: "AKTAU",
+    fundingSources: ["PPP", "LOCAL_BUDGET"],
     totalBudget: 21_000_000_000,
     spentAmount: 1_200_000_000,
-    status: "PLANNED",
+    status: "INITIATED",
+    visibility: "DRAFT",
     ownerKey: "UTEGENOV",
     members: [
       { userKey: "NURPEISOVA", role: "PROJECT_ADMINISTRATOR" },
@@ -471,10 +700,21 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Строительство физкультурно-оздоровительного комплекса в г. Кокшетау",
+    shortName: "ФОК Кокшетау",
     description:
       "Строительство физкультурно-оздоровительного комплекса с универсальным игровым залом, бассейном и залом единоборств в г. Кокшетау для развития массового спорта среди детей и молодёжи Акмолинской области.",
+    category: "Спорт",
+    projectType: "INFRASTRUCTURE",
     ministry: MINISTRIES[7],
+    responsibleOrganization: "КГУ «Спортивная школа г. Кокшетау»",
+    contactSlug: "sports-kokshetau",
+    goal: "Развить массовый спорт среди детей и молодёжи Акмолинской области.",
+    kpis: [
+      { name: "Пропускная способность комплекса", baselineValue: "0", targetValue: "500", unit: "посетителей/день" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "KOKSHETAU",
+    fundingSources: ["LOCAL_BUDGET"],
     totalBudget: 4_800_000_000,
     spentAmount: 4_100_000_000,
     status: "IN_PROGRESS",
@@ -492,10 +732,21 @@ const PROJECTS: ProjectSeed[] = [
   },
   {
     name: "Модернизация системы теплоснабжения г. Талдыкорган",
+    shortName: "Теплосети Талдыкорган",
     description:
       "Замена изношенных тепловых сетей и модернизация центральной котельной г. Талдыкорган для повышения надёжности теплоснабжения и снижения потерь тепловой энергии в осенне-зимний период.",
+    category: "Энергетика",
+    projectType: "MODERNIZATION",
     ministry: MINISTRIES[4],
+    responsibleOrganization: "КГП «Талдыкорганская теплоэнергетическая компания»",
+    contactSlug: "heating-taldykorgan",
+    goal: "Повысить надёжность теплоснабжения и снизить потери тепловой энергии в г. Талдыкорган.",
+    kpis: [
+      { name: "Аварийные отключения за сезон", baselineValue: "30", targetValue: "10", unit: "случаев" },
+    ],
+    scale: "SINGLE_LOCALITY",
     location: "TALDYKORGAN",
+    fundingSources: ["LOCAL_BUDGET", "ORGANIZATION_FUNDS"],
     totalBudget: 7_200_000_000,
     spentAmount: 7_200_000_000,
     status: "FINISHED",
@@ -576,16 +827,35 @@ async function main() {
 
   console.log("📁 Creating projects...");
   for (const p of PROJECTS) {
+    const { start: startDate, end: plannedEndDate } = projectDateRange(p.stages);
+    const yearlyBudgets = buildYearlyBudgets(p.totalBudget, p.spentAmount, p.stages);
+    const owner = USERS.find((u) => u.key === p.ownerKey)!;
+
     const project = await prisma.project.create({
       data: {
         name: p.name,
+        shortName: p.shortName,
         description: p.description,
+        category: p.category,
+        projectType: p.projectType,
         totalBudget: p.totalBudget,
         spentAmount: p.spentAmount,
         status: p.status,
         ownerId: userIdByKey.get(p.ownerKey)!,
         ministryId: ministryIdByName.get(p.ministry)!,
+        responsibleOrganization: p.responsibleOrganization,
+        projectManagerName: owner.name,
+        officialContactEmail: `${p.contactSlug}@gov.kz`,
+        goal: p.goal,
+        scale: p.scale,
         locationId: locationIdByKey.get(p.location)!,
+        startDate,
+        plannedEndDate,
+        actualEndDate: p.status === "FINISHED" ? plannedEndDate : null,
+        fundingSources: p.fundingSources,
+        infoAsOfDate: INFO_AS_OF_DATE,
+        nextUpdateDate: NEXT_UPDATE_DATE,
+        visibility: p.visibility ?? "PUBLISHED",
         stages: {
           create: p.stages.map((s, sortOrder) => ({
             label: s.label,
@@ -600,6 +870,22 @@ async function main() {
           create: p.members.map((m) => ({
             userId: userIdByKey.get(m.userKey)!,
             role: m.role,
+          })),
+        },
+        kpis: {
+          create: p.kpis.map((k, sortOrder) => ({
+            name: k.name,
+            baselineValue: k.baselineValue,
+            targetValue: k.targetValue,
+            unit: k.unit,
+            sortOrder,
+          })),
+        },
+        yearlyBudgets: {
+          create: yearlyBudgets.map((y) => ({
+            year: y.year,
+            plannedAmount: y.plannedAmount,
+            actualAmount: y.actualAmount,
           })),
         },
       },

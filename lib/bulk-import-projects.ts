@@ -2,9 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { ProjectStatus, StageStatus } from "@/app/generated/prisma";
 import { validateStages, type StageInput, type ValidatedStage } from "@/lib/validate-stages";
 import { notifyProjectMembers } from "@/lib/notifications";
+import { PROJECT_STATUS_ORDER } from "@/lib/project-status";
 import type { BulkImportRowResult, BulkProjectImportRow } from "@/types/bulk-import";
 
-const PROJECT_STATUSES: ProjectStatus[] = ["PLANNED", "IN_PROGRESS", "FINISHED"];
 const STAGE_STATUSES: StageStatus[] = ["PLANNED", "IN_PROGRESS", "COMPLETED"];
 
 async function resolveMinistryId(name: string): Promise<string> {
@@ -58,7 +58,7 @@ export async function importProjectsBulk(
 
       let status: ProjectStatus = "PLANNED";
       if (row.status) {
-        if (!PROJECT_STATUSES.includes(row.status as ProjectStatus)) {
+        if (!PROJECT_STATUS_ORDER.includes(row.status as ProjectStatus)) {
           throw new Error(`Недопустимый статус проекта: "${row.status}".`);
         }
         status = row.status as ProjectStatus;

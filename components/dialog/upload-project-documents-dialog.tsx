@@ -15,10 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { formatFileSize } from "@/lib/format-file-size";
 import { uploadProjectDocuments } from "@/services/api/projects/documents";
+import { DOCUMENT_TYPE_SUGGESTIONS } from "@/lib/document-type";
 
 type UploadProjectDocumentsDialogProps = {
   projectId: string;
 };
+
+type PendingFile = { file: File; documentType: string };
 
 export function UploadProjectDocumentsDialog({
   projectId,
@@ -27,7 +30,7 @@ export function UploadProjectDocumentsDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<PendingFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -43,7 +46,10 @@ export function UploadProjectDocumentsDialog({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files ?? []);
+    const selected = Array.from(e.target.files ?? []).map((file) => ({
+      file,
+      documentType: "",
+    }));
     setFiles((prev) => [...prev, ...selected]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -52,12 +58,20 @@ export function UploadProjectDocumentsDialog({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const updateDocumentType = (index: number, documentType: string) => {
+    setFiles((prev) => prev.map((f, i) => (i === index ? { ...f, documentType } : f)));
+  };
+
   const handleUpload = async () => {
     if (files.length === 0) return;
     setError(null);
     setIsUploading(true);
     try {
-      await uploadProjectDocuments(projectId, files);
+      await uploadProjectDocuments(
+        projectId,
+        files.map((f) => f.file),
+        files.map((f) => f.documentType || null)
+      );
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -93,28 +107,42 @@ export function UploadProjectDocumentsDialog({
             className="flex h-9 w-full rounded-md border border-input bg-transparent text-sm shadow-xs outline-none file:mr-3 file:h-full file:border-0 file:border-r file:border-input file:bg-muted file:px-3 file:text-sm file:font-medium focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
           />
           {files.length > 0 && (
-            <ul className="space-y-1.5">
-              {files.map((file, index) => (
+            <ul className="space-y-2">
+              {files.map((entry, index) => (
                 <li
-                  key={`${file.name}-${index}`}
-                  className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
+                  key={`${entry.file.name}-${index}`}
+                  className="space-y-2 rounded-md border p-2 text-sm"
                 >
-                  <span className="min-w-0 truncate">{file.name}</span>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Удалить файл"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">{entry.file.name}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {formatFileSize(entry.file.size)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Удалить файл"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
+                  <input
+                    list="document-type-suggestions"
+                    value={entry.documentType}
+                    onChange={(e) => updateDocumentType(index, e.target.value)}
+                    placeholder="Тип документа (например, Паспорт проекта)"
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  />
                 </li>
               ))}
+              <datalist id="document-type-suggestions">
+                {DOCUMENT_TYPE_SUGGESTIONS.map((type) => (
+                  <option key={type} value={type} />
+                ))}
+              </datalist>
             </ul>
           )}
           {error ? (

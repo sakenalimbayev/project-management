@@ -20,11 +20,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { FundingSource } from "@/app/generated/prisma";
+import { FUNDING_SOURCE_LABELS } from "@/lib/funding-source";
+import type { ProjectWithRelations } from "@/types/project";
 
 type ProjectBudgetSectionProps = {
   projectId: string;
   totalBudget: string;
   spentAmount: string;
+  fundingSources?: FundingSource[];
+  yearlyBudgets?: NonNullable<ProjectWithRelations["yearlyBudgets"]>;
   canEdit: boolean;
 };
 
@@ -32,6 +37,8 @@ export function ProjectBudgetSection({
   projectId,
   totalBudget,
   spentAmount,
+  fundingSources = [],
+  yearlyBudgets = [],
   canEdit,
 }: ProjectBudgetSectionProps) {
   const router = useRouter();
@@ -179,11 +186,55 @@ export function ProjectBudgetSection({
           </Dialog>
         ) : null}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <ProjectBudgetWidget
           totalBudget={totalBudget}
           spentAmount={spentAmount}
         />
+        {fundingSources.length > 0 && (
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+              Источники финансирования
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {fundingSources.map((source) => (
+                <span
+                  key={source}
+                  className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700"
+                >
+                  {FUNDING_SOURCE_LABELS[source]}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {yearlyBudgets.length > 0 && (
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+              Бюджет по годам
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[280px] text-left text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    <th className="py-1.5 pr-3 font-medium">Год</th>
+                    <th className="py-1.5 pr-3 font-medium">План</th>
+                    <th className="py-1.5 font-medium">Факт</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {yearlyBudgets.map((y) => (
+                    <tr key={y.id} className="border-b last:border-0">
+                      <td className="py-1.5 pr-3">{y.year}</td>
+                      <td className="py-1.5 pr-3">{Number(y.plannedAmount).toLocaleString("ru-RU")}</td>
+                      <td className="py-1.5">{Number(y.actualAmount).toLocaleString("ru-RU")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

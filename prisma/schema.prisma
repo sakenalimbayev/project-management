@@ -25,9 +25,13 @@ enum ProjectMemberRole {
 }
 
 enum ProjectStatus {
+  INITIATED
   PLANNED
   IN_PROGRESS
+  DELAYED
   FINISHED
+  SUSPENDED
+  CANCELLED
 }
 
 enum StageStatus {
@@ -40,6 +44,39 @@ enum QuestionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ProjectType {
+  NEW_SYSTEM
+  MODERNIZATION
+  INTEGRATION
+  SERVICE_DIGITALIZATION
+  AI_SYSTEM
+  INFRASTRUCTURE
+  OTHER
+}
+
+enum ProjectScale {
+  NATIONWIDE
+  MULTIPLE_REGIONS
+  SINGLE_REGION
+  SINGLE_LOCALITY
+}
+
+enum FundingSource {
+  REPUBLICAN_BUDGET
+  LOCAL_BUDGET
+  ORGANIZATION_FUNDS
+  PPP
+  GRANT
+  OTHER
+}
+
+enum ProjectVisibility {
+  DRAFT
+  IN_MODERATION
+  PUBLISHED
+  UNPUBLISHED
 }
 
 model User {
@@ -110,9 +147,13 @@ model VerificationToken {
 }
 
 model Project {
-  id           String        @id @default(uuid())
-  name         String
-  description  String?
+  id          String  @id @default(uuid())
+  name        String
+  shortName   String?
+  description String?
+  category    String?
+  projectType ProjectType?
+
   totalBudget  Decimal       @db.Decimal(15, 2)
   spentAmount  Decimal       @default(0) @db.Decimal(15, 2)
   status       ProjectStatus @default(PLANNED)
@@ -122,14 +163,34 @@ model Project {
 
   ministryId String
   ministry   Ministry @relation(fields: [ministryId], references: [id])
-  
-  locationId String
-  location   Location @relation(fields: [locationId], references: [id])
 
-  members ProjectMember[]
-  questions Question[]
-  stages    ProjectStage[]
-  documents ProjectDocument[]
+  responsibleOrganization String?
+  projectManagerName      String?
+  officialContactEmail    String?
+
+  goal String?
+
+  scale ProjectScale?
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+
+  startDate      DateTime? @db.Date
+  plannedEndDate DateTime? @db.Date
+  actualEndDate  DateTime? @db.Date
+
+  fundingSources FundingSource[]
+
+  infoAsOfDate   DateTime?         @db.Date
+  nextUpdateDate DateTime?         @db.Date
+  visibility     ProjectVisibility @default(DRAFT)
+
+  members       ProjectMember[]
+  questions     Question[]
+  stages        ProjectStage[]
+  documents     ProjectDocument[]
+  kpis          ProjectKpi[]
+  yearlyBudgets ProjectYearlyBudget[]
   notifications Notification[]
   auditLogEntries AuditLogEntry[]
 
@@ -141,13 +202,46 @@ model Project {
   @@index([locationId])
 }
 
+model ProjectKpi {
+  id            String @id @default(uuid())
+  projectId     String
+  name          String
+  baselineValue String
+  targetValue   String
+  unit          String?
+  sortOrder     Int    @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model ProjectYearlyBudget {
+  id            String  @id @default(uuid())
+  projectId     String
+  year          Int
+  plannedAmount Decimal @default(0) @db.Decimal(15, 2)
+  actualAmount  Decimal @default(0) @db.Decimal(15, 2)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, year])
+}
+
 model ProjectDocument {
-  id        String @id @default(uuid())
-  projectId String
-  fileName  String
-  fileUrl   String
-  fileSize  Int
-  mimeType  String
+  id           String  @id @default(uuid())
+  projectId    String
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  documentType String?
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 

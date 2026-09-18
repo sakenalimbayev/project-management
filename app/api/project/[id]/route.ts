@@ -3,12 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { canManageProjectStages } from "@/lib/project-stage-auth";
 import { notifyProjectMembers, resolveActorLabel } from "@/lib/notifications";
 import { recordAuditLog } from "@/lib/audit-log";
-import { PROJECT_STATUS_LABELS } from "@/lib/project-status";
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_ORDER } from "@/lib/project-status";
 import { ProjectStatus } from "@/app/generated/prisma";
 import { isPrismaError } from "@/utils/is-prisma-error";
 import { NextRequest, NextResponse } from "next/server";
-
-const PROJECT_STATUSES: ProjectStatus[] = ["PLANNED", "IN_PROGRESS", "FINISHED"];
 
 export async function GET(
   request: NextRequest,
@@ -36,6 +34,12 @@ export async function GET(
         },
         documents: {
           orderBy: { createdAt: "desc" },
+        },
+        kpis: {
+          orderBy: { sortOrder: "asc" },
+        },
+        yearlyBudgets: {
+          orderBy: { year: "asc" },
         },
       }
     });
@@ -112,7 +116,7 @@ export async function PATCH(
 
     const status =
       typeof statusRaw === "string" &&
-      PROJECT_STATUSES.includes(statusRaw as ProjectStatus)
+      PROJECT_STATUS_ORDER.includes(statusRaw as ProjectStatus)
         ? (statusRaw as ProjectStatus)
         : null;
     if (!status) {

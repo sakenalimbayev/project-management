@@ -22,7 +22,7 @@ export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> 
     city: string | null;
     latitude: number | null;
     longitude: number | null;
-  };
+  } | null;
   members: {
     id: string;
     projectId: string;
@@ -76,8 +76,29 @@ export type ProjectWithRelations = Omit<Project, "totalBudget" | "spentAmount"> 
     fileUrl: string;
     fileSize: number;
     mimeType: string;
+    documentType: string | null;
     uploadedById: string | null;
     createdAt: Date;
+  }[];
+  kpis?: {
+    id: string;
+    projectId: string;
+    name: string;
+    baselineValue: string;
+    targetValue: string;
+    unit: string | null;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+  yearlyBudgets?: {
+    id: string;
+    projectId: string;
+    year: number;
+    plannedAmount: string;
+    actualAmount: string;
+    createdAt: Date;
+    updatedAt: Date;
   }[];
   totalBudget: string;
   spentAmount: string;

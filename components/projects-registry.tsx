@@ -44,7 +44,7 @@ export const ProjectsRegistry: FC<ProjectsRegistryProps> = ({ data }) => {
     const regionOptions = useMemo(() => {
         const unique = new Set<string>();
         data.forEach((p) => {
-            const label = p.location.city ?? p.location.region;
+            const label = p.location?.city ?? p.location?.region;
             if (label) unique.add(label);
         });
         return [
@@ -67,7 +67,7 @@ export const ProjectsRegistry: FC<ProjectsRegistryProps> = ({ data }) => {
         const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59.999`) : null;
         return data.filter((project) => {
             const matchesSearch = !term || project.name.toLowerCase().includes(term);
-            const projectRegion = project.location.city ?? project.location.region;
+            const projectRegion = project.location?.city ?? project.location?.region;
             const matchesRegion = region === ALL_REGIONS || projectRegion === region;
             const matchesStatus = status === ALL_STATUSES || project.status === status;
             const createdAt = new Date(project.createdAt);

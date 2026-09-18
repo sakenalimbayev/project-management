@@ -38,6 +38,7 @@ export function ProjectDocumentsSection({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{doc.fileName}</p>
                     <p className="text-xs text-muted-foreground">
+                      {doc.documentType ? `${doc.documentType} · ` : ""}
                       {formatFileSize(doc.fileSize)} ·{" "}
                       {new Date(doc.createdAt).toLocaleDateString("ru-RU")}
                     </p>

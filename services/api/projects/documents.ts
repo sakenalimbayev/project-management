@@ -3,9 +3,16 @@ import { ProjectWithRelations } from "@/types/project";
 
 type ProjectDocument = NonNullable<ProjectWithRelations["documents"]>[number];
 
-export const uploadProjectDocuments = async (projectId: string, files: File[]) => {
+export const uploadProjectDocuments = async (
+  projectId: string,
+  files: File[],
+  documentTypes?: (string | null)[]
+) => {
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file));
+  if (documentTypes) {
+    formData.append("documentTypes", JSON.stringify(documentTypes));
+  }
 
   const res = await fetch(`/api/project/${projectId}/documents`, {
     method: "POST",
